@@ -3,7 +3,7 @@ NASM = nasm
 LD = i686-elf-ld
 
 CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD \
-         -fno-builtin -fno-exception -fno-stack-protector -fno-rtti -nostdlib -nodefaultlibs
+         -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs		 
 LDFLAGS = -T linker.ld -nostdlib
 
 SRC_DIR = src
