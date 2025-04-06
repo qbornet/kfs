@@ -1,8 +1,9 @@
 CC = i686-elf-gcc
-AS = i686-elf-as
+NASM = nasm
 LD = i686-elf-ld
 
-CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD
+CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD \
+         -fno-builtin -fno-exception -fno-stack-protector -fno-rtti -nostdlib -nodefaultlibs
 LDFLAGS = -T linker.ld -nostdlib
 
 SRC_DIR = src
@@ -17,7 +18,7 @@ kernel.bin: $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
 	$(LD) $(LDFLAGS) -o kernel.bin $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
 
 $(OBJ_DIR)/boot.o: $(SRC_DIR)/boot.asm | $(OBJ_DIR)
-	$(AS) $< -o $@
+	$(NASM) -f elf32 $< -o $@
 
 $(OBJ_DIR)/kernel.o: $(SRC_DIR)/kernel.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -38,6 +39,5 @@ run: iso
 
 clean:
 	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
-
 
 -include $(OBJ_DIR)/*.d
