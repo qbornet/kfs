@@ -1,21 +1,43 @@
-SOURCES_ASM := asm/boot.asm
-ASM_NAMES := boot.bin
+CC = i686-elf-gcc
+AS = i686-elf-as
+LD = i686-elf-ld
 
+CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD
+LDFLAGS = -T linker.ld -nostdlib
 
-all: $(ASM_NAMES)
+SRC_DIR = src
+OBJ_DIR = obj
+ISO_DIR = iso
+GRUB_DIR = $(ISO_DIR)/boot/grub
+ISO_FILE = nilbogos.iso
 
-$(ASM_NAMES): $(SOURCES_ASM)
-	nasm -f bin $(SOURCES_ASM) -o $@
+all: kernel.bin
 
-run:
-	qemu-system-i386 -fda boot.bin -nographic -serial mon:stdio
+kernel.bin: $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
+	$(LD) $(LDFLAGS) -o kernel.bin $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
 
-debug:
-	qemu-system-i386 -fda boot.bin -nographic -serial mon:stdio -s -S
+$(OBJ_DIR)/boot.o: $(SRC_DIR)/boot.asm | $(OBJ_DIR)
+	$(AS) $< -o $@
+
+$(OBJ_DIR)/kernel.o: $(SRC_DIR)/kernel.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+iso: kernel.bin
+	@echo "Creating ISO directory structure..."
+	@mkdir -p $(ISO_DIR)/boot
+	@mkdir -p $(GRUB_DIR)
+	@cp kernel.bin $(ISO_DIR)/boot/
+	@echo "Generating ISO image..."
+	grub-mkrescue -o $(ISO_FILE) $(ISO_DIR)
+
+run: iso
+	qemu-system-i386 -cdrom $(ISO_FILE)
 
 clean:
-	rm -rf boot.bin
+	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
 
-re: clean all
 
-.PHONY: debug run re clean
+-include $(OBJ_DIR)/*.d
