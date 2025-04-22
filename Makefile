@@ -1,10 +1,10 @@
-CC = clang
+CC = i686-elf-gcc
 NASM = nasm
-LD = ld
+LD = i686-elf-ld
 
 CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD \
-         -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs -m32
-LDFLAGS = -T linker.ld -nostdlib -m32
+         -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
+LDFLAGS = -T linker.ld -nostdlib
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -35,10 +35,10 @@ iso: kernel.bin
 	grub-mkrescue -o $(ISO_FILE) $(ISO_DIR)
 
 run: iso
-	qemu-system-i386 -cdrom $(ISO_FILE) -enable-kvm -nographic -serial mon:stdio
+	qemu-system-i386 -cdrom $(ISO_FILE)
 
 debug:
-	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -s -S
+	qemu-system-i386 -cdrom $(ISO_FILE) -enable-kvm -nographic -serial mon:stdio -s -S
 
 clean:
 	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin

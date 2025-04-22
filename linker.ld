@@ -6,24 +6,29 @@ SECTIONS
     /* Place the kernel at 1MB */
     . = 0x00100000;
 
-    .multiboot : {
-         KEEP(*(.multiboot))
+    .multiboot BLOCK(0x1000) : ALIGN(0x1000)
+    {
+        KEEP(*(.multiboot))
     }
 
-    .text : {
-         *(.text*)
+    .text BLOCK(0x1000) : ALIGN(0x1000)
+    {
+         *(.text)
     }
 
-    .rodata : {
-         *(.rodata*)
+    .rodata BLOCK(0x1000) : ALIGN(0x1000)
+    {
+         *(.rodata)
     }
 
-    .data : {
-         *(.data*)
+    .data BLOCK(0x1000) : ALIGN(0x1000)
+    {
+         *(.data)
     }
 
-    .bss : {
+    .bss BLOCK(0x1000) : ALIGN(0x1000)
+    {
          *(COMMON)
-         *(.bss*)
+         *(.bss)
     }
 }
