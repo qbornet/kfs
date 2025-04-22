@@ -11,12 +11,14 @@ multiboot_header:
     dd 0                  ; Architecture (0 = i386)
     dd 24                 ; Total header length (in bytes)
     dd 0x17ADAF12         ; Checksum: (0xE85250D6 + 0 + 24 + 0x17ADAF12 = 0 mod 2^32)
-    dd 0                  ; End tag: Tag type 0 indicates the end
+    dw 6                  ; type = 6, modules alignment
+    dw 0                  ; flags optional = 0.
     dd 8                  ; Tag size is 8 bytes
 
 section .text
     global _start
     extern kernel_main
+
 _start:
     call kernel_main
 hang:
