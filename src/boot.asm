@@ -15,6 +15,12 @@ multiboot_header:
     dw 0                  ; flags optional = 0.
     dd 8                  ; Tag size is 8 bytes
 
+section .bss              ; start scetion .bss create stack
+align 16                  ; align 16 byte to follow System V ABI
+stack_bottom:             
+resb 0x4000               ; 16 KiB
+stack_top:
+
 section .text
     global _start
     extern kernel_main
