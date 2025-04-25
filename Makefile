@@ -2,45 +2,73 @@ CC = i686-elf-gcc
 NASM = nasm
 LD = i686-elf-ld
 
-CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -MMD \
+CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -MMD \
          -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
 LDFLAGS = -T linker.ld -nostdlib
 
+
 SRC_DIR = src
 OBJ_DIR = obj
+ASM_DIR = $(SRC_DIR)/asm
+VGA_DIR = $(SRC_DIR)/vga
 ISO_DIR = iso
+
+C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c)
+ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
+HEADERS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(VGA_DIR)/*.h)
+
+
+C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
+VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
+ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
+
+OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS)
+
 GRUB_DIR = $(ISO_DIR)/boot/grub
 ISO_FILE = nilbogos.iso
 
-all: kernel.bin
+all: directories kernel.bin
 
-kernel.bin: $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
-	$(LD) $(LDFLAGS) -o kernel.bin $(OBJ_DIR)/boot.o $(OBJ_DIR)/kernel.o
+directories:
+	mkdir -p $(OBJ_DIR)
+	mkdir -p $(OBJ_DIR)/asm
+	mkdir -p $(OBJ_DIR)/vga
 
-$(OBJ_DIR)/boot.o: $(SRC_DIR)/boot.asm | $(OBJ_DIR)
+kernel.bin: $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $^
+
+$(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $< -o $@
+
+$(OBJ_DIR)/vga/%.o: $(VGA_DIR)/%.c $(HEADERS)
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $< -o $@
+
+$(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 $< -o $@
 
-$(OBJ_DIR)/kernel.o: $(SRC_DIR)/kernel.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
 
 iso: kernel.bin
-	@echo "Creating ISO directory structure..."
-	@mkdir -p $(ISO_DIR)/boot
-	@mkdir -p $(GRUB_DIR)
-	@cp kernel.bin $(ISO_DIR)/boot/
+	@cp -f kernel.bin $(ISO_DIR)/boot/
 	@echo "Generating ISO image..."
-	grub-mkrescue -o $(ISO_FILE) $(ISO_DIR)
+	xorriso -as mkisofs \
+		-o nilbogos.iso \
+		-b boot/grub/i386-pc/eltorito.img \
+		-c boot.catalog \
+		-no-emul-boot \
+		-boot-load-size 4 \
+		-boot-info-table iso
 
 run: iso
-	qemu-system-i386 -cdrom $(ISO_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -enable-kvm
 
-debug:
-	qemu-system-i386 -cdrom $(ISO_FILE) -enable-kvm -nographic -serial mon:stdio -s -S
+debug: iso
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -s -S
 
 clean:
 	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
 
+re: clean all
+
 -include $(OBJ_DIR)/*.d
+
+.PHONY: all clean directories debug run re
