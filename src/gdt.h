@@ -29,6 +29,23 @@
 # define FLAGS_MODE_ON 1
 # define FLAGS_MODE_OFF 0
 
+// set in flags byte, avl bit
+# define FLAGS_AVL_64_ON 1
+# define FLAGS_AVL_64_OFF 0
+
+// set in access byte, s bit (1 code or data segment)
+# define ACCESS_DESCRIPTOR_TYPE_ON 1
+
+// set in access byte, s bit (0 system segment like TSS)
+# define ACCESS_DESCRIPTOR_TYPE_OFF 0
+
+// set in access byte, privilege level of segment (DPL)
+# define ACCESS_DPL_RING_0 0
+# define ACCESS_DPL_RING_1 1
+# define ACCESS_DPL_RING_2 2
+# define ACCESS_DPL_RING_3 3
+
+
 # include <stdint.h>
 # include <stdbool.h>
 # include "lib/mem.h"

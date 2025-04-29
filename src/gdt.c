@@ -12,9 +12,9 @@ static inline uint8_t   create_flags(uint8_t gran, uint8_t mode, uint8_t avl)
     return avl | 0 << 1 | mode << 2 | gran << 3;
 }
 
-static inline uint8_t   create_access(uint8_t type, uint8_t system, uint8_t dpl, uint8_t segment)
+static inline uint8_t   create_access(uint8_t type, uint8_t descriptor, uint8_t dpl)
 {
-    return (type & 0xf) | (system & 0x1) << 4 | (dpl & 0x3) << 5 | (segment & 0x1) << 7;
+    return (type & 0xf) | (descriptor & 0x1) << 4 | (dpl & 0x3) << 5 | (1 & 0x1) << 7;
 }
 
 static inline void    create_descriptor(uint8_t flags, uint8_t access, uint32_t addr, uint32_t limit, sd_ptr segment_des)
@@ -64,8 +64,8 @@ void    init_gdt(void)
 
     // CODE DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
-            create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
+            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
+            create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
             0x00400000,
             0x003FFFFF,
             &sdes[1]
@@ -73,8 +73,8 @@ void    init_gdt(void)
     
     // DATA DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
+            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
+            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
             0x00800000,
             0x003FFFFF,
             &sdes[2]
@@ -83,8 +83,8 @@ void    init_gdt(void)
 
     // STACK DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_ON, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
+            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
+            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_ON, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
             0x00F00000, // grows down so start at the end of the segment.
             0x003FFFFF,
             &sdes[3]
@@ -92,8 +92,8 @@ void    init_gdt(void)
 
     // VGA DESCRIPTOR (this is only present so you can write string)
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, 0),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
+            create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
+            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
             0x000B8000,
             0x00000FFF,
             &sdes[4]
