@@ -45,8 +45,14 @@ void terminal_setcolor(uint8_t color)
 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
 {
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = vga_entry(c, color);
+	const size_t    index = (y * VGA_WIDTH + x) * 2;
+    uint16_t        value = vga_entry(c, color);
+
+    asm volatile(
+            "movw %0,  %%gs:(%1)"
+            :: "r"(value), "r"(index)
+            : "memory"
+    );
 }
 
 void terminal_putchar(char c) 

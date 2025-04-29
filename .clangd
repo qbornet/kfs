@@ -1,3 +1,2 @@
 CompileFlags:
-  Add:
-  - "-I./src/vga"
+  Add: [-nostdlib, -nodefaultlibs, -Isrc/vga, -Isrc/mem]
