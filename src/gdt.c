@@ -12,9 +12,9 @@ static inline uint8_t   create_flags(uint8_t gran, uint8_t mode, uint8_t avl)
     return avl | 0 << 1 | mode << 2 | gran << 3;
 }
 
-static inline uint8_t   create_access(uint8_t type, uint8_t descriptor, uint8_t dpl)
+static inline uint8_t   create_access(uint8_t type, uint8_t system, uint8_t dpl, uint8_t segment)
 {
-    return (type & 0xf) | (descriptor & 0x1) << 4 | (dpl & 0x3) << 5 | (1 & 0x1) << 7;
+    return (type & 0xf) | (system & 0x1) << 4 | (dpl & 0x3) << 5 | (segment & 0x1) << 7;
 }
 
 static inline void    create_descriptor(uint8_t flags, uint8_t access, uint32_t addr, uint32_t limit, sd_ptr segment_des)
@@ -32,20 +32,26 @@ static inline void    create_descriptor(uint8_t flags, uint8_t access, uint32_t 
     segment_des->end = low_address | (access & 0xff) << 8 | (limit & 0xf) << 16 | (flags & 0xf) << 20 | high_address << 24;
 }
 
-static inline void    reload_segments(void)
-{
-    asm volatile(
-            "jmp $0x08, $reload_cs\n\t"
-            "reload_cs:\n\t"
-            "mov $0x10, %ax\n\t"
-            "mov %ax, %ds\n\t"
-            "mov %ax, %es\n\t"
-            "mov %ax, %fs\n\t"
-            "mov $0x20, %ax\n\t"
-            "mov %ax, %gs\n\t"
-            "mov $0x18, %ax\n\t"
-            "mov %ax, %ss\n\t"
-        );
+static inline void reload_segments(void) {
+    __asm__ volatile (
+        ".intel_syntax noprefix\n\t"
+        "push 0x08\n\t"
+        "push offset 1f\n\t"
+        "lret\n"
+        "1:\n\t"
+        "mov ax, 0x10\n\t"
+        "mov ds, ax\n\t"
+        "mov es, ax\n\t"
+        "mov fs, ax\n\t"
+        "mov ax, 0x20\n\t"
+        "mov gs, ax\n\t"
+        "mov ax, 0x18\n\t"
+        "mov ss, ax\n\t"
+        ".att_syntax prefix\n\t"
+        :
+        :
+        : "ax", "memory"
+    );
 }
 
 static inline void    load_gdt(void)
@@ -64,36 +70,37 @@ void    init_gdt(void)
 
     // CODE DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
-            create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
-            0x00400000,
-            0x003FFFFF,
-            &sdes[1]
-        );
+        create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
+        create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF),
+                      1, 0, 1),
+        0x00000000,
+        0xFFFFF,
+        &sdes[1]
+    );
     
     // DATA DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
-            0x00800000,
-            0x003FFFFF,
-            &sdes[2]
-
-        );
+        create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
+        create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF),
+                      1, 0, 1),
+        0x00000000,
+        0xFFFFF,
+        &sdes[2]
+    );
 
     // STACK DESCRIPTOR
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_ON, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
-            0x00F00000, // grows down so start at the end of the segment.
-            0x003FFFFF,
+            create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, 0),
+            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_ON, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
+            0x00000000,
+            0x00FFFFFF,
             &sdes[3]
         );
 
     // VGA DESCRIPTOR (this is only present so you can write string)
     create_descriptor(
-            create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
-            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
+            create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, 0),
+            create_access(create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), 1, 0, 1),
             0x000B8000,
             0x00000FFF,
             &sdes[4]
