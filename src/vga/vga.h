@@ -3,6 +3,7 @@
 # include <stdbool.h>
 # include <stdint.h>
 # include <stddef.h>
+# include "../lib/string.h"
 # define VGA_WIDTH   80
 # define VGA_HEIGHT  25
 # define VGA_MEMORY 0xB8000
@@ -27,5 +28,6 @@ enum vga_color {
 
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink); 
 void    terminal_initialize(void);
+void    terminal_putchar(char c);
 void    terminal_writestring(const char* data, uint8_t color);
 #endif

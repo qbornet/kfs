@@ -10,14 +10,6 @@ inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink)
 	return fg | bg << 4 | blink << 7;
 }
 
-size_t strlen(const char* str) 
-{
-	size_t len = 0;
-	while (str[len])
-		len++;
-	return len;
-}
-
 
 size_t terminal_row;
 size_t terminal_column;
