@@ -68,6 +68,10 @@ void terminal_write(const char* data, size_t size)
 
 void terminal_writestring(const char* data, uint8_t color) 
 {
-    terminal_setcolor(color);
+    if (color != 0) {
+        terminal_setcolor(color);
+    } else {
+        terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    }
 	terminal_write(data, strlen(data));
 }
