@@ -1,6 +1,6 @@
 #include "gdt.h"
 
-sd_t    sdes[16];
+sd_t    sdes[8];
 
 static inline uint8_t   create_type(uint8_t exec, uint8_t dc, uint8_t rw, uint8_t access)
 {
@@ -74,7 +74,7 @@ void    init_gdt(void)
         create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
         create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
         0x00000000,
-        0x000FFFFF,
+        0x000FFAFF,
         &sdes[1]
     );
     

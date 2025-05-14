@@ -27,6 +27,11 @@ enum vga_color {
 };
 
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink); 
+void    set_terminal_row(int num);
+void    set_terminal_column(int num);
+
+void    add_terminal_row(int num);
+void    add_terminal_column(int num);
 void    terminal_initialize(void);
 void    terminal_putchar(char c);
 void    terminal_writestring(const char* data, uint8_t color);

@@ -1,5 +1,4 @@
 # include "printk.h"
-#include <stdint.h>
 
 static void putnbr_hex_upper(unsigned int nbr, int *ret)
 {
@@ -27,7 +26,6 @@ static void print_hex(char c, unsigned int nbr, int *ret)
         putnbr_hex(nbr, ret);
     }
 }
-
 
 static void print_dec(int nbr, int *ret)
 {
@@ -64,27 +62,52 @@ static void print_pointer(void *addr, int *ret)
 }
 
 // definition of the function call to printk function is in io.c
-void    decode_fmt_string(char c, va_list *ap, int *ret)
+void    decode_fmt_string(const char *str, prm_indentifier_t *prm, int *index, va_list *ap, int *ret)
 {
-    const char *to_print;
+    const char     *to_print;
+    const char      c = *str;
+    va_list         ap_cpy;
 
+
+    va_copy(ap_cpy, *ap);
     switch (c) {
     case 'x':
     case 'X':
         print_hex(c, (unsigned int)va_arg(*ap, unsigned int), ret);
+        *index += 2;
         break;
     case 'd':
     case 'i':
         print_dec((int)va_arg(*ap, int), ret);
+        *index += 2;
         break;
     case 's':
         to_print = (const char *)va_arg(*ap, const char *);
         terminal_writestring(to_print, 0);
+        *index += 2;
         break;
     case 'p':
         print_pointer((void *)va_arg(*ap, void *), ret);
+        *index += 2;
         break;
     default:
-        terminal_writestring("(format not handle)", 0);
+        if (str[1] && isdigit(str[1])) {
+            prm->present = true;
+            prm->leading = str[0];
+            prm->max = (uint32_t)(str[1] - '0');
+        }
+
+        if (prm->present == true) {
+            *index += 2;
+            decode_fmt_string_len(&str[2], &ap_cpy, prm);
+            va_end(ap_cpy);
+            if (prm->writen < prm->max) {
+                for (uint32_t i = 0; i < (prm->max - prm->writen); i++)
+                    terminal_putchar(prm->leading);
+            }
+            decode_fmt_string(&str[2], prm, index, ap, ret);
+        } else {
+            terminal_writestring("(format not handle)", 0);
+        }
     }
 }

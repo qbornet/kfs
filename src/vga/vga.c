@@ -47,13 +47,49 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
     );
 }
 
+void    set_terminal_column(int num)
+{
+    if (num > VGA_WIDTH)
+        return;
+    terminal_column = num;
+}
+
+void    set_terminal_row(int num)
+{
+    if (num > VGA_HEIGHT)
+        return;
+    terminal_row = num;
+}
+
+void    add_terminal_column(int num)
+{
+    if (terminal_column + num == VGA_WIDTH)
+        terminal_column = 0;
+    terminal_column = num;
+}
+
+
+void    add_terminal_row(int num)
+{
+    if (terminal_row + num == VGA_HEIGHT)
+        terminal_row = 0;
+    terminal_row = num;
+}
+
 void terminal_putchar(char c) 
 {
+    if (c == '\n') {
+        terminal_row++;
+        if (terminal_row == VGA_HEIGHT)
+            terminal_row = 0;
+        terminal_column = 0;
+        return;
+    }
 	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 	if (++terminal_column == VGA_WIDTH) {
 		terminal_column = 0;
 		if (++terminal_row == VGA_HEIGHT)
-			terminal_row = 0;
+            terminal_row = 0;
 	}
 }
 

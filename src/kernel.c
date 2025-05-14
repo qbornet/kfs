@@ -7,8 +7,18 @@ void kernel_main(void)
 {
     init_gdt();
 	terminal_initialize();
-	terminal_writestring("Hello, World From Kernel!", vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
-    print_memory((void *)0x100000, 0x10);
+
+    struct gdt  gdt_ptr;
+    //void        *stack;
+    int         val = 42;
+    asm volatile (
+            "sgdt %0"
+            : "=m" (gdt_ptr)
+        );
+    (void)val;
+    printk("[%X]", gdt_ptr.size);
+    print_memory((void *)gdt_ptr.address, 0x40);
+    printk("[%X]", gdt_ptr.size);
 
     while (1) { 
         asm volatile ("hlt");
