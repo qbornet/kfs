@@ -12,19 +12,34 @@ OBJ_DIR = obj
 ASM_DIR = $(SRC_DIR)/asm
 VGA_DIR = $(SRC_DIR)/vga
 LIB_DIR = $(SRC_DIR)/lib
+GDT_DIR = $(SRC_DIR)/gdt
+PAGING_DIR = $(SRC_DIR)/paging
 ISO_DIR = iso
 
-C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c)
+C_SOURCES = $(wildcard $(SRC_DIR)/*.c) \
+			$(wildcard $(VGA_DIR)/*.c) \
+			$(wildcard $(LIB_DIR)/*.c) \
+			$(wildcard $(GDT_DIR)/*.c) \
+			$(wildcard $(PAGING_DIR)/*.c) 
+
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
-HEADERS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(VGA_DIR)/*.h)
+
+HEADERS = $(wildcard $(SRC_DIR)/*.h) \
+		  $(wildcard $(VGA_DIR)/*.h) \
+		  $(wildcard $(LIB_DIR)/*.h) \
+		  $(wildcard $(GDT_DIR)/*.h) \
+		  $(wildcard $(PAGING_DIR)/*.h)
+		  
 
 
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
 VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
 LIB_OBJECTS = $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(filter $(LIB_DIR)/%.c, $(C_SOURCES)))
+GDT_OBJECTS = $(patsubst $(GDT_DIR)/%.c, $(OBJ_DIR)/gdt/%.o, $(filter $(GDT_DIR)/%.c, $(C_SOURCES)))
+PAGING_OBJECTS = $(patsubst $(PAGING_DIR)/%.c, $(OBJ_DIR)/paging/%.o, $(filter $(PAGING_DIR)/%.c, $(C_SOURCES)))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 
-OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS)
+OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(GDT_OBJECTS) $(PAGING_OBJECTS)
 
 GRUB_DIR = $(ISO_DIR)/boot/grub
 ISO_FILE = nilbogos.iso
@@ -36,6 +51,8 @@ directories:
 	mkdir -p $(OBJ_DIR)/asm
 	mkdir -p $(OBJ_DIR)/vga
 	mkdir -p $(OBJ_DIR)/lib
+	mkdir -p $(OBJ_DIR)/gdt
+	mkdir -p $(OBJ_DIR)/paging
 
 kernel.bin: $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $^
@@ -50,7 +67,7 @@ $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 $< -o $@
 
 
-iso: kernel.bin
+$(ISO_FILE):
 	@cp -f kernel.bin $(ISO_DIR)/boot/
 	@echo "Generating ISO image..."
 	xorriso -as mkisofs \
@@ -61,10 +78,13 @@ iso: kernel.bin
 		-boot-load-size 4 \
 		-boot-info-table iso
 
-run: iso
+run: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE)
 
-debug: iso
+run-terminal: $(ISO_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -display curses
+
+debug: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -s -S
 
 clean:

@@ -1,0 +1,8 @@
+Checks: "-*,readability-identifier-naming"
+FormatStyle: File
+CheckOptions:
+  readability-identifier-naming.FunctionCase: "lower_case"
+  readability-identifier-naming.VariableCase: "lower_case"
+  readability-identifier-naming.GlobalVariablePrefix: "g_"
+  readability-identifier-naming.GlobaVariableCase: "lower_case"
+  readability-identifier-naming.GlobalConstantCase: "UPPER_CASE"

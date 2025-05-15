@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-nostdlib, -nodefaultlibs, -Isrc/vga, -Isrc/mem]
+  Add: [-nostdlib, -nodefaultlibs, -Isrc/vga, -Isrc/lib, -Isrc/paging, -Isrc/gdt]
