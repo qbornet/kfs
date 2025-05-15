@@ -1,7 +1,6 @@
 #include "paging.h"
-#include "kernelHeap.h"
+#include "kernel_heap.h"
 
-#include "vga/vga.h"
 
 #define FRAME_NUMBER(a) ((a) >> 12)  // div PAGE_SIZE
 #define FRAME_INDEX(n)  ((n) >> 5)   // div NBITS
@@ -92,7 +91,7 @@ void initialise_paging()
     uint32_t mem_size = 0x10000000;
     uint32_t placement_address;
 
-    placement_address = (uint32_t)&end;
+    placement_address = (uint32_t)&g_end;
     g_nframes = FRAME_NUMBER(mem_size);
     g_frames = (uint32_t *)kmalloc(FRAME_INDEX(g_nframes));
     memset((uint8_t *)g_frames, 0, FRAME_INDEX(g_nframes));
@@ -103,7 +102,7 @@ void initialise_paging()
 
     for(int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE;
         i += PAGE_SIZE) {
-        get_page(i, 1, kernel_directory);
+        get_page(i, 1, g_kernel_directory);
     }
 
     for(uint32_t i = 0; i < placement_address; i += PAGE_SIZE) {
@@ -113,12 +112,12 @@ void initialise_paging()
 
     for(int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE;
         i += PAGE_SIZE) {
-        alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
+        alloc_frame(get_page(i, 1, g_kernel_directory), 0, 0);
     }
 
     switch_to_page_directory(g_kernel_directory);
 
-    kheap = create_heap(
+    g_kheap = create_heap(
         KHEAP_START, KHEAP_START + KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
 }
 
