@@ -1,38 +1,35 @@
 OUTPUT_FORMAT(elf32-i386)
-
 ENTRY(_start)
+
 SECTIONS
 {
     /* Place the kernel at 1MB */
     . = 0x00100000;
 
-    .multiboot ALIGN(0x1000) :
+    .multiboot BLOCK(0x1000) : ALIGN(0x1000)
     {
         KEEP(*(.multiboot))
     }
 
-    . += 0xC0000000;
-    
-    .text ALIGN(0x1000) : AT(ADDR(.text) - OxC0000000)
+    .text BLOCK(0x1000) : ALIGN(0x1000)
     {
          *(.text)
     }
 
-    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - OxC0000000)
+    .rodata BLOCK(0x1000) : ALIGN(0x1000)
     {
          *(.rodata)
     }
 
-    .data ALIGN(0x1000) : AT(ADDR(.data) - OxC0000000)
+    .data BLOCK(0x1000) : ALIGN(0x1000)
     {
          *(.data)
     }
 
-    .bss ALIGN(0x1000) : AT(ADDR(.bss) - OxC0000000)
+    .bss BLOCK(0x1000) : ALIGN(0x1000)
     {
          *(COMMON)
          *(.bss)
+         end = .;
     }
-    
-    _kernel_end = .;
 }
