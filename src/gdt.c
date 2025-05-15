@@ -1,6 +1,7 @@
 #include "gdt.h"
+#include <stdint.h>
 
-sd_t    sdes[8];
+sd_t                sdes[8];
 
 static inline uint8_t   create_type(uint8_t exec, uint8_t dc, uint8_t rw, uint8_t access)
 {
@@ -57,11 +58,21 @@ static inline void reload_segments(void) {
 
 static inline void    load_gdt(void)
 {
-    struct gdt _gdt;
-
+    struct gdt   _gdt;
     _gdt.size = sizeof(sdes) - 1;
     _gdt.address = (uint32_t)&sdes;
-    asm volatile ("lgdt %0" :: "m"(_gdt));
+
+    asm volatile (
+            "cld\n\t"
+            "mov %0, %%esi\n\t"
+            "mov %1, %%edi\n\t"
+            "mov %2, %%ecx\n\t"
+            "rep movsb\n\t"
+            :
+            : "r" (&sdes), "r" (0x800), "r" (sizeof(sdes))
+            : "esi", "edi", "ecx", "memory"
+        );
+    asm volatile ("lgdt %0\n\t" :: "m"(_gdt));
 }
 
 void    init_gdt(void)
@@ -74,7 +85,7 @@ void    init_gdt(void)
         create_flags(FLAGS_GRANULARITY_ON, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
         create_access(create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF), ACCESS_DESCRIPTOR_TYPE_ON, ACCESS_DPL_RING_0),
         0x00000000,
-        0x000FFAFF,
+        0x000FFFFF,
         &sdes[1]
     );
     

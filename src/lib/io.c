@@ -12,21 +12,18 @@ void    print_memory(void  *addr, size_t len)
     for (uint32_t i = 0; i < len; i++) {
         if (i % 16 == 0) {
             current_addr = (void *)(addr + i);
-            if (counter++ == 0) {
+            if (counter++ == 0)
                 printk("%p: ", current_addr);
-            } else {
+            else 
                 printk("\n%p: ", current_addr);
-            }
         }
         groups = *(uint8_t*)(addr + i);
-        if (i%4 == 0) {
+        if (i%2 == 0)
             printk(" ");
-        }
         printk("%02X", groups);
     }
 }
 
-// printk is a limited printf function for kernel only.
 int printk(const char *fmt, ...)
 {
     int                 i = 0;

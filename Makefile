@@ -50,7 +50,7 @@ $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 $< -o $@
 
 
-iso: kernel.bin
+$(ISO_FILE):
 	@cp -f kernel.bin $(ISO_DIR)/boot/
 	@echo "Generating ISO image..."
 	xorriso -as mkisofs \
@@ -61,10 +61,13 @@ iso: kernel.bin
 		-boot-load-size 4 \
 		-boot-info-table iso
 
-run: iso
+run: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE)
 
-debug: iso
+run-terminal: $(ISO_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -display curses
+
+debug: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -s -S
 
 clean:

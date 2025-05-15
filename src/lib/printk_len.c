@@ -1,13 +1,13 @@
 #include "printk.h"
 
-void    putnbr_hex_len(unsigned int nbr, prm_indentifier_t *prm)
+static inline void    putnbr_hex_len(unsigned int nbr, prm_indentifier_t *prm)
 {
     if (nbr >= 16)
         putnbr_hex_len(nbr / 16, prm);
     prm->writen += 1;
 }
 
-void    putnbr_len(int nbr, prm_indentifier_t *prm)
+static inline void    putnbr_len(int nbr, prm_indentifier_t *prm)
 {
     if (nbr >= 10)
         putnbr_hex_len(nbr / 10, prm);

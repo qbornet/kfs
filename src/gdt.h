@@ -50,6 +50,7 @@
 # include <stdbool.h>
 # include "lib/mem.h"
 
+// segment_descriptor based on the intel IA-32
 struct segment_descriptor {
     uint32_t    start;
     uint32_t    end;
@@ -58,6 +59,7 @@ struct segment_descriptor {
 typedef struct segment_descriptor   sd_t;
 typedef struct segment_descriptor*  sd_ptr;
 
+// gdt struct to hold the size + address 6 byte for pmode, needed for instruction lgdt.
 struct gdt {
     uint16_t    size;
     uint32_t    address;

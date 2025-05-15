@@ -1,6 +1,6 @@
 # include "printk.h"
 
-static void putnbr_hex_upper(unsigned int nbr, int *ret)
+static inline void putnbr_hex_upper(unsigned int nbr, int *ret)
 {
     char    *base = "0123456789ABCDEF";
 
@@ -9,7 +9,7 @@ static void putnbr_hex_upper(unsigned int nbr, int *ret)
     terminal_putchar(base[nbr%16]);
 }
 
-static void putnbr_hex(unsigned int nbr, int *ret)
+static inline void putnbr_hex(unsigned int nbr, int *ret)
 {
     char    *base = "0123456789abcdef";
 
@@ -18,7 +18,7 @@ static void putnbr_hex(unsigned int nbr, int *ret)
     terminal_putchar(base[nbr%16]);
 }
 
-static void print_hex(char c, unsigned int nbr, int *ret)
+static inline void print_hex(char c, unsigned int nbr, int *ret)
 {
     if (c == 'X') {
         putnbr_hex_upper(nbr, ret);
@@ -27,7 +27,7 @@ static void print_hex(char c, unsigned int nbr, int *ret)
     }
 }
 
-static void print_dec(int nbr, int *ret)
+static inline void print_dec(int nbr, int *ret)
 {
     unsigned int    nb = 0;
 
@@ -41,10 +41,10 @@ static void print_dec(int nbr, int *ret)
 
     if (nb >= 10) 
         print_dec(nb / 10, ret);
-    terminal_putchar(nb % 10 - '0');
+    terminal_putchar(nb % 10 + '0');
 }
 
-static void putnbr_pointer(unsigned long long nbr, int *ret)
+static inline void putnbr_pointer(unsigned long long nbr, int *ret)
 {
     char    *base = "0123456789abcdef";
 
@@ -54,7 +54,7 @@ static void putnbr_pointer(unsigned long long nbr, int *ret)
     *ret+=1;
 }
 
-static void print_pointer(void *addr, int *ret)
+static inline void print_pointer(void *addr, int *ret)
 {
     uintptr_t addr_nbr = (uintptr_t)addr;
     terminal_writestring("0x", 0);

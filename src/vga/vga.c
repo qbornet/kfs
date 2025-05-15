@@ -65,7 +65,7 @@ void    add_terminal_column(int num)
 {
     if (terminal_column + num == VGA_WIDTH)
         terminal_column = 0;
-    terminal_column = num;
+    terminal_column += num;
 }
 
 
@@ -73,7 +73,17 @@ void    add_terminal_row(int num)
 {
     if (terminal_row + num == VGA_HEIGHT)
         terminal_row = 0;
-    terminal_row = num;
+    terminal_row += num;
+}
+
+int    get_terminal_row(void)
+{
+    return terminal_row;
+}
+
+int    get_terminal_column(void)
+{
+    return terminal_column;
 }
 
 void terminal_putchar(char c) 
