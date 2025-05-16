@@ -1,6 +1,8 @@
 CC = i686-elf-gcc
 NASM = nasm
 LD = i686-elf-ld
+FORMAT = clang-format
+TIDY = clang-tidy
 
 CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -MMD \
          -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
@@ -44,7 +46,14 @@ OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(GDT_OBJECT
 GRUB_DIR = $(ISO_DIR)/boot/grub
 ISO_FILE = nilbogos.iso
 
-all: directories kernel.bin
+all: directories format tidy kernel.bin
+
+format: $(C_SOURCES) $(HEADERS)
+	@$(FORMAT) -i $(HEADERS) $(C_SOURCES)
+
+tidy: $(C_SOURCES) $(HEADERS)
+	@$(TIDY) --fix --fix-errors --fix-notes --config-file=$(PWD)/.clang-tidy \
+		--quiet $(C_SOURCES) $(HEADERS) -- -std=gnu99
 
 directories:
 	mkdir -p $(OBJ_DIR)
@@ -94,4 +103,4 @@ re: clean all
 
 -include $(OBJ_DIR)/*.d
 
-.PHONY: all clean directories debug run re
+.PHONY: all clean directories debug run re format tidy

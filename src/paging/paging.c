@@ -1,7 +1,6 @@
 #include "paging.h"
 #include "kernel_heap.h"
 
-
 #define FRAME_NUMBER(a) ((a) >> 12)  // div PAGE_SIZE
 #define FRAME_INDEX(n)  ((n) >> 5)   // div NBITS
 #define FRAME_OFFSET(n) ((n) & 0x1F) // mod NBITS
