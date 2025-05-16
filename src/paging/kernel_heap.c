@@ -12,7 +12,8 @@ heap_t                  *g_kheap = 0;
  * If 'physical_address' is non-null, stores the physical address of the
  * allocation.
  */
-static uint32_t __kmalloc(uint32_t size, int align, uint32_t *physical_address) //NOLINT
+static uint32_t
+__kmalloc(uint32_t size, int align, uint32_t *physical_address) // NOLINT
 {
     uint32_t placement_address = (uint32_t)&g_end;
 
