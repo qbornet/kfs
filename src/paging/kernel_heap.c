@@ -117,6 +117,7 @@ heap_t *create_heap(uint32_t start,
 {
     // ASSERT(start % PAGE_SIZE == 0);
     // ASSERT(end % PAGE_SIZE == 0);
+
     heap_t *heap = (heap_t *)kmalloc(sizeof(heap_t));
 
     heap->index = ordered_array_place(
@@ -174,7 +175,7 @@ void *alloc(uint32_t size, uint8_t page_align, heap_t *heap)
         expand(old_len + total, heap);
         return alloc(size, page_align, heap);
     }
-    header_t *orig = (header_t *)ordered_array_place(idx, &heap->index);
+    header_t *orig = (header_t *)ordered_array_lookup(idx, &heap->index);
     uint32_t  orig_pos = (uint32_t)orig;
     uint32_t  orig_size = orig->size;
 
