@@ -3,7 +3,7 @@
 #include "gdt/gdt.h"
 #include "lib/io.h"
 #include "lib/mem.h"
-#include "paging/paging.h"
+#include "tests/tests.h"
 #include "vga/vga.h"
 
 #endif

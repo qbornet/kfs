@@ -15,14 +15,18 @@ ASM_DIR = $(SRC_DIR)/asm
 VGA_DIR = $(SRC_DIR)/vga
 LIB_DIR = $(SRC_DIR)/lib
 GDT_DIR = $(SRC_DIR)/gdt
-PAGING_DIR = $(SRC_DIR)/paging
+MEMORY_DIR = $(SRC_DIR)/memory
+DEBUG_DIR = $(SRC_DIR)/debug
+TESTS_DIR = $(SRC_DIR)/tests
 ISO_DIR = iso
 
 C_SOURCES = $(wildcard $(SRC_DIR)/*.c) \
 			$(wildcard $(VGA_DIR)/*.c) \
 			$(wildcard $(LIB_DIR)/*.c) \
 			$(wildcard $(GDT_DIR)/*.c) \
-			$(wildcard $(PAGING_DIR)/*.c) 
+			$(wildcard $(MEMORY_DIR)/*.c) \
+			$(wildcard $(DEBUG_DIR)/*.c) \
+			$(wildcard $(TESTS_DIR)/*.c)
 
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
 
@@ -30,7 +34,9 @@ HEADERS = $(wildcard $(SRC_DIR)/*.h) \
 		  $(wildcard $(VGA_DIR)/*.h) \
 		  $(wildcard $(LIB_DIR)/*.h) \
 		  $(wildcard $(GDT_DIR)/*.h) \
-		  $(wildcard $(PAGING_DIR)/*.h)
+		  $(wildcard $(MEMORY_DIR)/*.h) \
+		  $(wildcard $(DEBUG_DIR)/*.h) \
+		  $(wildcard $(TESTS_DIR)/*.h)
 		  
 
 
@@ -38,10 +44,12 @@ C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
 VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
 LIB_OBJECTS = $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(filter $(LIB_DIR)/%.c, $(C_SOURCES)))
 GDT_OBJECTS = $(patsubst $(GDT_DIR)/%.c, $(OBJ_DIR)/gdt/%.o, $(filter $(GDT_DIR)/%.c, $(C_SOURCES)))
-PAGING_OBJECTS = $(patsubst $(PAGING_DIR)/%.c, $(OBJ_DIR)/paging/%.o, $(filter $(PAGING_DIR)/%.c, $(C_SOURCES)))
+MEMORY_OBJECTS = $(patsubst $(MEMORY_DIR)/%.c, $(OBJ_DIR)/memory/%.o, $(filter $(MEMORY_DIR)/%.c, $(C_SOURCES)))
+DEBUG_OBJECTS  = $(patsubst $(DEBUG_DIR)/%.c, $(OBJ_DIR)/debug/%.o,  $(filter $(DEBUG_DIR)/%.c,  $(C_SOURCES)))
+TESTS_OBJECTS  = $(patsubst $(TESTS_DIR)/%.c,  $(OBJ_DIR)/tests/%.o,  $(filter $(TESTS_DIR)/%.c,  $(C_SOURCES)))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 
-OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(GDT_OBJECTS) $(PAGING_OBJECTS)
+OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(GDT_OBJECTS) $(MEMORY_OBJECTS) $(DEBUG_OBJECTS) $(TESTS_OBJECTS)
 
 GRUB_DIR = $(ISO_DIR)/boot/grub
 ISO_FILE = nilbogos.iso
@@ -61,7 +69,9 @@ directories:
 	mkdir -p $(OBJ_DIR)/vga
 	mkdir -p $(OBJ_DIR)/lib
 	mkdir -p $(OBJ_DIR)/gdt
-	mkdir -p $(OBJ_DIR)/paging
+	mkdir -p $(OBJ_DIR)/debug
+	mkdir -p $(OBJ_DIR)/memory
+	mkdir -p $(OBJ_DIR)/tests
 
 kernel.bin: $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $^
