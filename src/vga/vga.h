@@ -1,12 +1,12 @@
 #ifndef VGA_H
-# define VGA_H
-# include <stdbool.h>
-# include <stdint.h>
-# include <stddef.h>
-# include "../lib/string.h"
-# define VGA_WIDTH   80
-# define VGA_HEIGHT  25
-# define VGA_MEMORY 0xB8000
+#define VGA_H
+#include "../lib/string.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#define VGA_WIDTH  80
+#define VGA_HEIGHT 25
+#define VGA_MEMORY 0xB8000
 
 // enum text mode vga color.
 enum vga_color {
@@ -30,7 +30,7 @@ enum vga_color {
 
 // Get a vga color.
 // Blink param if set to 1 is making cursor blink.
-uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink); 
+uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink);
 
 // Get terminal row global variable value.
 // (terminal_row variable is not extern)
@@ -62,9 +62,11 @@ void    terminal_setcolor(uint8_t color);
 // Terminal initialize set blank through all the memory for vga text mode.
 void    terminal_initialize(void);
 
-// Write a character to the current position based on terminal_row and terminal_column variable.
+// Write a character to the current position based on terminal_row and
+// terminal_column variable.
 void    terminal_putchar(char c);
 
-// Write a string to the current position based on terminal_row and terminal_column variable.
-void    terminal_writestring(const char* data, uint8_t color);
+// Write a string to the current position based on terminal_row and
+// terminal_column variable.
+void    terminal_writestring(const char *data, uint8_t color);
 #endif

@@ -1,8 +1,11 @@
 CC = i686-elf-gcc
-NASM = nasm
 LD = i686-elf-ld
+OBJCOPY = i686-elf-objcopy
+NASM = nasm
+TIDY = clang-tidy
+FORMAT = clang-format
 
-CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -MMD \
+CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -O0 -MMD \
          -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
 LDFLAGS = -T linker.ld -nostdlib
 
@@ -27,9 +30,12 @@ ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS)
 
 GRUB_DIR = $(ISO_DIR)/boot/grub
+BIN_FILE = kernel.bin
+SYM_FILE = kernel.sym
 ISO_FILE = nilbogos.iso
 
-all: directories kernel.bin
+
+all: directories format tidy $(BIN_FILE)
 
 directories:
 	mkdir -p $(OBJ_DIR)
@@ -37,13 +43,20 @@ directories:
 	mkdir -p $(OBJ_DIR)/vga
 	mkdir -p $(OBJ_DIR)/lib
 
-kernel.bin: $(OBJECTS)
+format: $(C_SOURCES) $(HEADERS)
+	@$(FORMAT) -i $(HEADERS) $(C_SOURCES)
+
+tidy: $(C_SOURCES) $(HEADERS)
+	@$(TIDY) --fix --fix-errors --fix-notes --config-file=$(PWD)/.clang-tidy \
+		--quiet $(C_SOURCES) $(HEADERS) -- -std=gnu99
+
+$(BIN_FILE): $(OBJECTS) 
 	$(LD) $(LDFLAGS) -o $@ $^
 
-$(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) -I$(LIB_DIR) -c $< -o $@
+$(SYM_FILE): $(BIN_FILE)
+	$(OBJCOPY) --only-keep-debug $^ $@
 
-$(OBJ_DIR)/vga/%.o: $(VGA_DIR)/%.c $(HEADERS)
+$(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -I$(SRC_DIR) -I$(LIB_DIR) -c $< -o $@
 
 $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
@@ -65,16 +78,19 @@ run: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE)
 
 run-terminal: $(ISO_FILE)
-	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -display curses
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -display curses
 
-debug: $(ISO_FILE)
-	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -enable-kvm -serial mon:stdio -s -S
+debug: $(ISO_FILE) $(SYM_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -serial mon:stdio -s -S
 
 clean:
 	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
+
+gdb:
+	gdb -x "gdbscript" kernel.bin
 
 re: clean all
 
 -include $(OBJ_DIR)/*.d
 
-.PHONY: all clean directories debug run re
+.PHONY: all clean directories debug run re format tidy

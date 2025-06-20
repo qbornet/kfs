@@ -1,24 +1,80 @@
 #include "kernel.h"
-#include "gdt.h"
-#include "vga/vga.h"
-#include "lib/io.h"
 
-void    kernel_main(void)
+void kernel_main(uint32_t magic, uint32_t mbi)
 {
-    init_gdt();
-	terminal_initialize();
-    terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    if(magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
+        printk("MULTIBOOT2_HEADER_FAILED: %lX\n", magic);
+        return;
+    }
+    if(mbi & 7) {
+        printk("UNALIGNED MBI: %lX\n", mbi);
+        return;
+    }
+    struct multiboot_tag *tag;
+    unsigned              size;
 
-    struct gdt  gdt_ptr;
-    int         val = 42;
-    asm volatile (
-            "sgdt %0"
-            : "=m" (gdt_ptr)
-        );
+    init_gdt();
+    terminal_initialize();
+    terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    printk("val: %X", 13782);
+    return;
+
+    size = *(uint32_t *)mbi;
+    printk("Announced mbi size: %X\n", size);
+    for(tag = (struct multiboot_tag *)(mbi + 8);
+        tag->type != MULTIBOOT_TAG_TYPE_END;
+        tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag
+                                       + ((tag->size + 7) & ~7))) {
+        printk("Tag: %X, Size: %X\n", tag->type, tag->size);
+        switch(tag->type) {
+            case MULTIBOOT_TAG_TYPE_CMDLINE:
+                {
+                    struct multiboot_tag_string *tag_string
+                        = (struct multiboot_tag_string *)tag;
+                    printk("Command line = %s\n", tag_string->string);
+                    break;
+                }
+            case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+                printk("Boot loader name = %s\n",
+                       ((struct multiboot_tag_string *)tag)->string);
+                break;
+            case MULTIBOOT_TAG_TYPE_MODULE:
+                printk("Boot at 0x%X-0x%X. Command line %s\n",
+                       ((struct multiboot_tag_module *)tag)->mod_start,
+                       ((struct multiboot_tag_module *)tag)->mod_end,
+                       ((struct multiboot_tag_module *)tag)->cmdline);
+                break;
+            case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
+                {
+                    uint32_t total_mem
+                        = ((struct multiboot_tag_basic_meminfo *)tag)->mem_lower
+                        + ((struct multiboot_tag_basic_meminfo *)tag)
+                              ->mem_upper;
+                    printk(
+                        "Total_mem: %lu KiB lower_mem: %u, upper_mem: %u\n",
+                        total_mem,
+                        ((struct multiboot_tag_basic_meminfo *)tag)->mem_lower,
+                        ((struct multiboot_tag_basic_meminfo *)tag)->mem_upper);
+                    break;
+                }
+            case MULTIBOOT_TAG_TYPE_APM:
+                {
+                    // struct multiboot_tag_apm *apm_table
+                    //     = (struct multiboot_tag_apm *)tag;
+                    break;
+                }
+            default: break;
+        }
+    }
+    /*
+    int val = 42;
+    asm volatile("sgdt %0"
+                 : "=m"(gdt_ptr));
     print_memory((void *)0x800, 0x40);
     print_memory((void *)gdt_ptr.address, 0x40);
     print_memory((void *)&val, 0x02);
-    while (1) { 
-        asm volatile ("hlt");
+    */
+    while(1) {
+        asm volatile("hlt");
     }
 }

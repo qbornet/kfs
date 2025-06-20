@@ -1,0 +1,9 @@
+set pagination off
+set architecture i386
+set disassembly-flavor intel
+
+exec-file kernel.bin
+symbol-file kernel.sym
+
+target remote localhost:1234
+hbreak *kernel_main
