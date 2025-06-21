@@ -21,15 +21,15 @@
 #define TYPE_A_ON                  1
 #define TYPE_A_OFF                 0
 
-// set in flags byte, granularity bit
+// set in flags byte, granularity bit (23 bit)
 #define FLAGS_GRANULARITY_ON       1
 #define FLAGS_GRANULARITY_OFF      0
 
-// set in flags byte, mode bit
+// set in flags byte, mode bit (22 bit)
 #define FLAGS_MODE_ON              1
 #define FLAGS_MODE_OFF             0
 
-// set in flags byte, avl bit
+// set in flags byte, avl bit (20 bit)
 #define FLAGS_AVL_64_ON            1
 #define FLAGS_AVL_64_OFF           0
 
@@ -46,6 +46,7 @@
 #define ACCESS_DPL_RING_3          3
 
 #include "lib/mem.h"
+#include "tss.h"
 #include <stdbool.h>
 #include <stdint.h>
 

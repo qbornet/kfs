@@ -19,7 +19,7 @@ ISO_DIR = iso
 
 C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c)
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
-HEADERS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(VGA_DIR)/*.h)
+HEADERS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(VGA_DIR)/*.h) $(wildcard $(LIB_DIR)/*.h)
 
 
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
@@ -57,7 +57,7 @@ $(SYM_FILE): $(BIN_FILE)
 	$(OBJCOPY) --only-keep-debug $^ $@
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) -I$(LIB_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $< -o $@
 
 $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 $< -o $@
@@ -81,7 +81,7 @@ run-terminal: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -display curses
 
 debug: $(ISO_FILE) $(SYM_FILE)
-	qemu-system-i386 -cdrom $(ISO_FILE) -serial mon:stdio -s -S
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -s -S -display curses
 
 clean:
 	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin

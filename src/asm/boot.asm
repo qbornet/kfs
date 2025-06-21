@@ -24,9 +24,10 @@ multiboot_header:
 multiboot_header_end:
 
 section .bss                                                                    ; start scetion .bss create stack
-align 16                                                                        ; align 16 byte to follow System V ABI
+    align 16                                                                    ; align 16 byte to follow System V ABI
+    extern stack_top
 stack_bottom:             
-resb 0x4000                                                                     ; 16 KiB
+    resb 0x4000                                                                 ; 16 KiB
 stack_top:
 
 section .text

@@ -1,7 +1,36 @@
 #include "gdt.h"
-#include <stdint.h>
 
-sd_t g_sdes[8];
+sd_t               g_sdes[16];
+tss_segment_t      g_tss_entry;
+
+extern void        stack_top(void);
+
+static inline void write_tss_entry(void)
+{
+    // set to 0 g_tss_entry
+    memset(&g_tss_entry, 0, sizeof(g_tss_entry));
+
+    // save stack segment selector;
+    g_tss_entry.ss0 = 0x24;
+
+    // call of stack_top to save kernel stack address
+    g_tss_entry.esp0 = (uint32_t)stack_top;
+
+    // get kernel stack pointer to g_tss_entry[0]
+    asm volatile("movl %%esp, %0"
+                 : "=r"(g_tss_entry.esp0));
+}
+
+static inline void load_tss(void)
+{
+    asm volatile(".intel_syntax noprefix\n\t"
+                 "mov ax, 0x40 \n\t"
+                 "ltr ax\n\t"
+                 ".att_syntax prefix\n\t"
+                 :
+                 :
+                 : "ax", "memory");
+}
 
 static inline uint8_t
 create_type(uint8_t exec, uint8_t dc, uint8_t rw, uint8_t access)
@@ -16,8 +45,7 @@ static inline uint8_t create_flags(uint8_t gran, uint8_t mode, uint8_t avl)
 
 static inline uint8_t create_access(uint8_t type, uint8_t system, uint8_t dpl)
 {
-    return (type & 0xf) | (system & 0x1) << 4 | (dpl & 0x3) << 5
-         | (1 & 0x1) << 7;
+    return type | system << 4 | dpl << 5 | 1 << 7;
 }
 
 static inline void create_descriptor(uint8_t  flags,
@@ -161,6 +189,22 @@ void init_gdt(void)
         0x00000000,
         0x000FFFFF,
         &g_sdes[7]);
+
+    // TASK STATE DESCRIPTOR
+    uint32_t base = (uint32_t)&g_tss_entry;
+    uint32_t limit = sizeof(tss_segment_t) - 1;
+    create_descriptor(
+        create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_OFF, FLAGS_AVL_64_OFF),
+        create_access(
+            create_type(TYPE_EXEC_ON, TYPE_DC_OFF, TYPE_RW_OFF, TYPE_A_ON),
+            ACCESS_DESCRIPTOR_TYPE_OFF,
+            ACCESS_DPL_RING_0),
+        base,
+        limit,
+        &g_sdes[8]);
+
+    write_tss_entry();
     load_gdt();
+    load_tss();
     reload_segments();
 }
