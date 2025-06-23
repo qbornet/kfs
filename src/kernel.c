@@ -56,11 +56,11 @@ for (tag = (struct multiboot_tag *)(mbi + 8);
 
 void kernel_main(uint32_t magic, uint32_t mbi)
 {
-    if(magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
+    if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
         printk("MULTIBOOT2_HEADER_FAILED: %lX\n", magic);
         return;
     }
-    if(mbi & 7) {
+    if (mbi & 7) {
         printk("UNALIGNED MBI: %lX\n", mbi);
         return;
     }
@@ -78,7 +78,8 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     print_memory((void *)0x800, 0x40);
     print_memory((void *)gdt_ptr.address, 0x40);
     print_memory((void *)&val, 0x02);
-    while(1) {
+    printk("\nthis value is zero: %d:%x\n", 0, 0);
+    while (1) {
         asm volatile("hlt");
     }
 }

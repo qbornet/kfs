@@ -46,6 +46,7 @@
 #define ACCESS_DPL_RING_3          3
 
 #include "lib/mem.h"
+#include "lib/shared.h"
 #include "tss.h"
 #include <stdbool.h>
 #include <stdint.h>

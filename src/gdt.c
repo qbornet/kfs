@@ -1,11 +1,11 @@
 #include "gdt.h"
 
-sd_t               g_sdes[16];
-tss_segment_t      g_tss_entry;
+sd_t                        g_sdes[16];
+tss_segment_t               g_tss_entry;
 
-extern void        stack_top(void);
+extern void                 stack_top(void);
 
-static inline void write_tss_entry(void)
+static __always_inline void write_tss_entry(void)
 {
     // set to 0 g_tss_entry
     memset(&g_tss_entry, 0, sizeof(g_tss_entry));
@@ -21,7 +21,7 @@ static inline void write_tss_entry(void)
                  : "=r"(g_tss_entry.esp0));
 }
 
-static inline void load_tss(void)
+static __always_inline void load_tss(void)
 {
     asm volatile(".intel_syntax noprefix\n\t"
                  "mov ax, 0x40 \n\t"
@@ -70,7 +70,7 @@ static inline void create_descriptor(uint8_t  flags,
 
 // reload only kernel descriptor other descriptor are loaded in gdtr but not
 // used.
-static inline void reload_segments(void)
+static __always_inline void reload_segments(void)
 {
     __asm__ volatile(".intel_syntax noprefix\n\t"
                      "push 0x08\n\t"
@@ -91,7 +91,7 @@ static inline void reload_segments(void)
                      : "ax", "memory");
 }
 
-static inline void load_gdt(void)
+static __always_inline void load_gdt(void)
 {
     struct gdt gdt;
     gdt.size = sizeof(g_sdes) - 1;
