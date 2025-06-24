@@ -4,6 +4,7 @@
  * Reference here for the tag system and handling from the grub2
  * https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html#kernel_002ec
  * */
+
 /*
 size = *(uint32_t *)mbi;
 printk("Announced mbi size: %X\n", size);
@@ -78,7 +79,7 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     print_memory((void *)0x800, 0x40);
     print_memory((void *)gdt_ptr.address, 0x40);
     print_memory((void *)&val, 0x02);
-    printk("\nthis value is zero: %d:%x\n", 0, 0);
+    jump_usermode();
     while (1) {
         asm volatile("hlt");
     }

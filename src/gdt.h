@@ -45,6 +45,7 @@
 #define ACCESS_DPL_RING_2          2
 #define ACCESS_DPL_RING_3          3
 
+#include "lib/io.h"
 #include "lib/mem.h"
 #include "lib/shared.h"
 #include "tss.h"
@@ -68,4 +69,5 @@ struct gdt {
 } __attribute__((packed));
 
 void init_gdt(void);
+void jump_usermode(void);
 #endif

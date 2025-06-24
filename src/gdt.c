@@ -2,7 +2,6 @@
 
 sd_t                        g_sdes[16];
 tss_segment_t               g_tss_entry;
-
 extern void                 stack_top(void);
 
 static __always_inline void write_tss_entry(void)
@@ -108,6 +107,32 @@ static __always_inline void load_gdt(void)
     asm volatile("lgdt %0\n\t" ::"m"(gdt));
 }
 
+static inline void test_user_mode_function(void)
+{
+    printk("\nTest in usermode");
+    while (1) {
+    }
+}
+
+__attribute__((naked, noreturn)) void jump_usermode(void)
+{
+    asm volatile(".intel_syntax noprefix\n\t"
+                 "mov ax, 0x30 | 3\n\t"
+                 "mov ds, ax\n\t"
+                 "mov es, ax\n\t"
+                 "mov fs, ax\n\t"
+                 "push 0x30 | 3\n\t"
+                 "push esp\n\t"
+                 "pushf\n\t"
+                 "push 0x28 | 3\n\t"
+                 "push %0\n\t"
+                 "iret\n\t"
+                 ".att_syntax prefix\n\t"
+                 :
+                 : "r"(test_user_mode_function)
+                 : "ax", "memory");
+}
+
 void init_gdt(void)
 {
     // NULL DESCRIPTOR
@@ -152,7 +177,7 @@ void init_gdt(void)
         create_access(
             create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF),
             ACCESS_DESCRIPTOR_TYPE_ON,
-            ACCESS_DPL_RING_0),
+            ACCESS_DPL_RING_3),
         0x000B8000,
         0x00000FFF,
         &g_sdes[4]);
