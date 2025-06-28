@@ -19,7 +19,7 @@ ISO_DIR = iso
 
 C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c)
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
-HEADERS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(VGA_DIR)/*.h) $(wildcard $(LIB_DIR)/*.h)
+HEADERS = $(wildcard $(SRC_DIR)/**/*.h) $(wildcard $(VGA_DIR)/**/*.h) $(wildcard $(LIB_DIR)/**/*.h)
 
 
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))

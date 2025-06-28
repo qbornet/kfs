@@ -1,6 +1,11 @@
 #ifndef GDT_H
 #define GDT_H
 
+// __VGA_DES Descriptor for gdt, index in segment selector for vga buffer.
+#undef __VGA_DES
+#define __VGA_DES 0x20
+
+
 // set bit system on
 #define BIT_SYSTEM_ON              1
 #define BIT_SYSTEM_OFF             0
@@ -47,7 +52,6 @@
 
 #include "lib/io.h"
 #include "lib/mem.h"
-#include "lib/shared.h"
 #include "tss.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -67,6 +71,7 @@ struct gdt {
     uint16_t size;
     uint32_t address;
 } __attribute__((packed));
+extern tss_segment_t    g_tss_entry;
 
 void init_gdt(void);
 void jump_usermode(void);

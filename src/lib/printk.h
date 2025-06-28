@@ -1,6 +1,6 @@
 #ifndef PRINTK_H
 #define PRINTK_H
-#include "../lib/shared.h"
+#include "../lib/shared/defs.h"
 #include "../vga/vga.h"
 #include "ctype.h"
 #include "mem.h"

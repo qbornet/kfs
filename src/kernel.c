@@ -68,18 +68,20 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     // struct multiboot_tag *tag;
     // unsigned size;
 
-    init_gdt();
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    init_gdt();
 
-    int        val = 42;
-    struct gdt gdt_ptr;
-    asm volatile("sgdt %0"
-                 : "=m"(gdt_ptr));
-    print_memory((void *)0x800, 0x40);
-    print_memory((void *)gdt_ptr.address, 0x40);
-    print_memory((void *)&val, 0x02);
-    jump_usermode();
+    // int        val = 42;
+    // struct gdt gdt_ptr;
+    // asm volatile("sgdt %0"
+    //              : "=m"(gdt_ptr));
+    //  print_memory((void *)0x800, 0x40);
+    //  print_memory((void *)gdt_ptr.address, 0x40);
+    //  print_memory((void *)&val, 0x02);
+    printk("\nCPL: %X\n", get_current_level_privilege());
+    printk("io bitmap base addres: 0x%X\n", g_tss_entry.iomap_base);
+    // jump_usermode();
     while (1) {
         asm volatile("hlt");
     }

@@ -2,6 +2,8 @@
 #define TSS_H
 #include <stdint.h>
 
+extern uint8_t g_iomap[8192];
+
 /*
  * TSS STRUCT FOR X86
  * */
@@ -34,4 +36,5 @@ typedef struct tss_struct {
     uint16_t trap;
     uint16_t iomap_base;
 } __attribute__((packed)) tss_segment_t;
+
 #endif

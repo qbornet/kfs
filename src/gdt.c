@@ -2,7 +2,25 @@
 
 sd_t                        g_sdes[16];
 tss_segment_t               g_tss_entry;
+uint8_t                     g_iomap[8192];
 extern void                 stack_top(void);
+
+static __always_inline void write_default_bitmap(void)
+{
+    uint16_t port;
+    uint32_t byte;
+    uint8_t  bit;
+    port = 0x3d5;
+    byte = port / 8;
+    bit = port % 8;
+    memset(g_iomap, 0xFF, sizeof(g_iomap) / sizeof(g_iomap[0]));
+    g_iomap[byte] &= ~(1 << bit);
+
+    port = 0x3d4;
+    byte = port / 8;
+    bit = port % 8;
+    g_iomap[byte] &= ~(1 << bit);
+}
 
 static __always_inline void write_tss_entry(void)
 {
@@ -15,9 +33,12 @@ static __always_inline void write_tss_entry(void)
     // call of stack_top to save kernel stack address
     g_tss_entry.esp0 = (uint32_t)stack_top;
 
-    // get kernel stack pointer to g_tss_entry[0]
-    asm volatile("movl %%esp, %0"
-                 : "=r"(g_tss_entry.esp0));
+    // save iomap_base address of i/o bitmap.
+    uintptr_t val = (uintptr_t)&g_iomap[0];
+    printk("value->ptr: %p value->hex: 0x%X", (void *)val, (uint16_t)val);
+    g_tss_entry.iomap_base = (uint16_t)val;
+    printk("iomap_base = %X", g_tss_entry.iomap_base);
+    write_default_bitmap();
 }
 
 static __always_inline void load_tss(void)
@@ -171,6 +192,7 @@ void init_gdt(void)
         0x000FFFFF,
         &g_sdes[3]);
 
+    // create_descriptor(0, 0, 0, 0, &g_sdes[4]);
     // VGA DESCRIPTOR (this is only present so you can write string)
     create_descriptor(
         create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),

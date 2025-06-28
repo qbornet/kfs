@@ -42,5 +42,6 @@ int printk(const char *fmt, ...)
         }
     }
     va_end(ap);
+    update_cursor();
     return ret;
 }
