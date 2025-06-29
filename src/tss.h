@@ -37,4 +37,10 @@ typedef struct tss_struct {
     uint16_t iomap_base;
 } __attribute__((packed)) tss_segment_t;
 
+typedef struct cpu_state {
+    tss_segment_t   tss;
+    uint8_t         io_bitmap[8192];
+    uint8_t         end_marker;
+} __attribute__((packed)) cpu_state_t;
+
 #endif

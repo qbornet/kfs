@@ -70,18 +70,18 @@ void kernel_main(uint32_t magic, uint32_t mbi)
 
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    init_cpu_state();
     init_gdt();
 
-    // int        val = 42;
-    // struct gdt gdt_ptr;
-    // asm volatile("sgdt %0"
-    //              : "=m"(gdt_ptr));
-    //  print_memory((void *)0x800, 0x40);
-    //  print_memory((void *)gdt_ptr.address, 0x40);
-    //  print_memory((void *)&val, 0x02);
+    int        val = 42;
+    struct gdt gdt_ptr;
+    asm volatile("sgdt %0"
+                 : "=m"(gdt_ptr));
+    print_memory((void *)0x800, 0x40);
+    print_memory((void *)gdt_ptr.address, 0x40);
+    print_memory((void *)&val, 0x02);
     printk("\nCPL: %X\n", get_current_level_privilege());
-    printk("io bitmap base addres: 0x%X\n", g_tss_entry.iomap_base);
-    // jump_usermode();
+    jump_usermode();
     while (1) {
         asm volatile("hlt");
     }

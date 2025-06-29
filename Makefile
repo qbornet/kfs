@@ -9,7 +9,6 @@ CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -O0 -MMD \
          -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
 LDFLAGS = -T linker.ld -nostdlib
 
-
 SRC_DIR = src
 OBJ_DIR = obj
 ASM_DIR = $(SRC_DIR)/asm
@@ -21,14 +20,12 @@ C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(L
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
 HEADERS = $(wildcard $(SRC_DIR)/**/*.h) $(wildcard $(VGA_DIR)/**/*.h) $(wildcard $(LIB_DIR)/**/*.h)
 
-
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
 VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
 LIB_OBJECTS = $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(filter $(LIB_DIR)/%.c, $(C_SOURCES)))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 
 OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS)
-
 GRUB_DIR = $(ISO_DIR)/boot/grub
 BIN_FILE = kernel.bin
 SYM_FILE = kernel.sym
@@ -63,7 +60,7 @@ $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 $< -o $@
 
 
-$(ISO_FILE):
+$(ISO_FILE): $(BIN_FILE)
 	@cp -f kernel.bin $(ISO_DIR)/boot/
 	@echo "Generating ISO image..."
 	xorriso -as mkisofs \
@@ -84,7 +81,7 @@ debug: $(ISO_FILE) $(SYM_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -s -S -display curses
 
 clean:
-	rm -rf $(OBJ_DIR) kernel.bin $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
+	rm -rf $(OBJ_DIR) $(BIN_FILE) $(SYM_FILE) $(ISO_FILE) $(ISO_DIR)/boot/kernel.bin
 
 gdb:
 	gdb -x "gdbscript" kernel.bin

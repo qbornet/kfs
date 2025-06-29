@@ -7,7 +7,7 @@ static __always_inline void putnbr_hex_upper(unsigned long nbr, int *ret)
     written = 0;
     for (int shift = 28; shift >= 0; shift -= 4) {
         uint8_t nibble = (nbr >> shift) & 0xF;
-        if (!nibble) continue;
+        if (!nibble && !written) continue;
         written++;
         terminal_putchar(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
         *ret += 1;
@@ -22,7 +22,7 @@ static __always_inline void putnbr_hex(unsigned long nbr, int *ret)
     written = 0;
     for (int shift = 28; shift >= 0; shift -= 4) {
         uint8_t nibble = (nbr >> shift) & 0xF;
-        if (!nibble) continue;
+        if (!nibble && !written) continue;
         written++;
         terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
         *ret += 1;
@@ -39,19 +39,11 @@ static __always_inline void print_hex(char c, unsigned long nbr, int *ret)
     }
 }
 
-static __always_inline void print_udec(unsigned long nbr, int *ret)
+static inline void print_udec(unsigned long nbr, int *ret)
 {
-    uint32_t written;
-
-    written = 0;
-    for (int shift = 28; shift >= 0; shift -= 4) {
-        uint8_t nibble = (nbr >> shift) & 0xF;
-        if (!nibble) continue;
-        written++;
-        terminal_putchar('0' + nibble);
-        *ret += 1;
-    }
-    if (!written) terminal_putchar('0');
+    if (nbr >= 10) print_udec(nbr / 10, ret);
+    terminal_putchar('0' + nbr % 10);
+    *ret += 1;
 }
 
 static __always_inline void print_dec(long nbr, int *ret)

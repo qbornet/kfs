@@ -1,44 +1,42 @@
 #include "gdt.h"
+#include "lib/cpl.h"
 
-sd_t                        g_sdes[16];
-tss_segment_t               g_tss_entry;
-uint8_t                     g_iomap[8192];
-extern void                 stack_top(void);
+sd_t               g_sdes[16];
+cpu_state_t       *g_cpu_state; // In the future should be an array of CPU
+extern void        stack_top(void);
 
-static __always_inline void write_default_bitmap(void)
+static inline void iomap_set(uint16_t port)
 {
-    uint16_t port;
-    uint32_t byte;
-    uint8_t  bit;
-    port = 0x3d5;
-    byte = port / 8;
-    bit = port % 8;
-    memset(g_iomap, 0xFF, sizeof(g_iomap) / sizeof(g_iomap[0]));
-    g_iomap[byte] &= ~(1 << bit);
+    uint32_t index = IOMAP_INDEX(port);
+    uint8_t  bit = IOMAP_BIT(port);
+    g_cpu_state->io_bitmap[index] |= (1 << bit);
+}
 
-    port = 0x3d4;
-    byte = port / 8;
-    bit = port % 8;
-    g_iomap[byte] &= ~(1 << bit);
+static inline void iomap_clear(uint16_t port)
+{
+    uint32_t index = IOMAP_INDEX(port);
+    uint8_t  bit = IOMAP_BIT(port);
+    g_cpu_state->io_bitmap[index] &= ~(1 << bit);
+}
+
+static inline uint8_t iomap_test(uint16_t port)
+{
+    uint32_t index = IOMAP_INDEX(port);
+    uint8_t  bit = IOMAP_BIT(port);
+    return (g_cpu_state->io_bitmap[index] & (1 << bit)) ? 1 : 0;
 }
 
 static __always_inline void write_tss_entry(void)
 {
-    // set to 0 g_tss_entry
-    memset(&g_tss_entry, 0, sizeof(g_tss_entry));
-
     // save stack segment selector;
-    g_tss_entry.ss0 = 0x24;
+    g_cpu_state->tss.ss0 = 0x24;
 
     // call of stack_top to save kernel stack address
-    g_tss_entry.esp0 = (uint32_t)stack_top;
+    g_cpu_state->tss.esp0 = (uint32_t)stack_top;
 
-    // save iomap_base address of i/o bitmap.
-    uintptr_t val = (uintptr_t)&g_iomap[0];
-    printk("value->ptr: %p value->hex: 0x%X", (void *)val, (uint16_t)val);
-    g_tss_entry.iomap_base = (uint16_t)val;
-    printk("iomap_base = %X", g_tss_entry.iomap_base);
-    write_default_bitmap();
+    // Authorize 0x3d4 and 0x3d5 port
+    iomap_clear(0x3d4);
+    iomap_clear(0x3d5);
 }
 
 static __always_inline void load_tss(void)
@@ -130,7 +128,8 @@ static __always_inline void load_gdt(void)
 
 static inline void test_user_mode_function(void)
 {
-    printk("\nTest in usermode");
+    printk("Test in usermode\n");
+    printk("CPL: %d\n", get_current_level_privilege());
     while (1) {
     }
 }
@@ -152,6 +151,17 @@ __attribute__((naked, noreturn)) void jump_usermode(void)
                  :
                  : "r"(test_user_mode_function)
                  : "ax", "memory");
+}
+
+// TODO: Need to handle SMP.
+void init_cpu_state(void)
+{
+    // zero tss and disable all io ports.
+    memset(&g_cpu_state->tss, 0, sizeof(tss_segment_t));
+    memset(g_cpu_state->io_bitmap, 0xFF, sizeof(g_cpu_state->io_bitmap));
+    g_cpu_state->tss.iomap_base = (uint16_t)offsetof(cpu_state_t, io_bitmap);
+    g_cpu_state->end_marker = 0xFF;
+    write_tss_entry();
 }
 
 void init_gdt(void)
@@ -238,8 +248,8 @@ void init_gdt(void)
         &g_sdes[7]);
 
     // TASK STATE DESCRIPTOR
-    uint32_t base = (uint32_t)&g_tss_entry;
-    uint32_t limit = sizeof(tss_segment_t) - 1;
+    uint32_t base = (uint32_t)&g_cpu_state->tss;
+    uint32_t limit = (uint32_t)&g_cpu_state->end_marker - base + 1;
     create_descriptor(
         create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_OFF, FLAGS_AVL_64_OFF),
         create_access(
@@ -250,7 +260,6 @@ void init_gdt(void)
         limit,
         &g_sdes[8]);
 
-    write_tss_entry();
     load_gdt();
     load_tss();
     reload_segments();
