@@ -12,10 +12,14 @@ void print_memory(void *addr, size_t len)
     for (uint32_t i = 0; i < len; i++) {
         if (i % 16 == 0) {
             current_addr = (void *)(addr + i);
-            if (counter++ == 0)
+            if (counter++ == 0) {
+                /* Need to check for terminal_row value so we \n when you have
+                 * multiple call of print_memory. */
+                if (get_terminal_row() != 1) serial_putchar('\n');
                 printk("%p: ", current_addr);
-            else
+            } else {
                 printk("\n%p: ", current_addr);
+            }
         }
         groups = *(uint8_t *)(addr + i);
         if (i % 2 == 0) printk(" ");
@@ -36,6 +40,7 @@ int printk(const char *fmt, ...)
         if (fmt[i] == '%') {
             decode_fmt_string(&fmt[i + 1], &options, &i, &ap, &ret);
         } else {
+            serial_putchar(fmt[i]);
             terminal_putchar(fmt[i]);
             ret++;
             i++;

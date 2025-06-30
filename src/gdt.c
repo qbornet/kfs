@@ -4,18 +4,22 @@ sd_t               g_sdes[16];
 cpu_state_t       *g_cpu_state; // In the future should be an array of CPU
 extern void        stack_top(void);
 
-static inline void iomap_set(uint16_t port)
+static inline void iomap_set(uint16_t *port, size_t size)
 {
-    uint32_t index = IOMAP_INDEX(port);
-    uint8_t  bit = IOMAP_BIT(port);
-    g_cpu_state->io_bitmap[index] |= (1 << bit);
+    for (size_t i = 0; i < size; i++) {
+        uint32_t index = IOMAP_INDEX(port[i]);
+        uint8_t  bit = IOMAP_BIT(port[i]);
+        g_cpu_state->io_bitmap[index] |= (1 << bit);
+    }
 }
 
-static inline void iomap_clear(uint16_t port)
+static inline void iomap_clear(uint16_t *port, size_t size)
 {
-    uint32_t index = IOMAP_INDEX(port);
-    uint8_t  bit = IOMAP_BIT(port);
-    g_cpu_state->io_bitmap[index] &= ~(1 << bit);
+    for (size_t i = 0; i < size; i++) {
+        uint32_t index = IOMAP_INDEX(port[i]);
+        uint8_t  bit = IOMAP_BIT(port[i]);
+        g_cpu_state->io_bitmap[index] &= ~(1 << bit);
+    }
 }
 
 static inline uint8_t iomap_test(uint16_t port)
@@ -33,9 +37,12 @@ static __always_inline void write_tss_entry(void)
     // call of stack_top to save kernel stack address
     g_cpu_state->tss.esp0 = (uint32_t)stack_top;
 
-    // Authorize 0x3d4 and 0x3d5 port
-    iomap_clear(0x3d4);
-    iomap_clear(0x3d5);
+    // Authorize 0x3d4 and 0x3d5 port (update vga cursor)
+    iomap_clear((uint16_t[]){ 0x3d4, 0x3d5 }, 2);
+
+    // Authorize 0x3f8 (COM1_PORT) and 0x3f8 + 5 is for waiting port to be,
+    // available.
+    iomap_clear((uint16_t[]){ 0x3f8, 0x3f8 + 5 }, 2);
 }
 
 static __always_inline void load_tss(void)
