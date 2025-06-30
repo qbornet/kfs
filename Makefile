@@ -75,7 +75,7 @@ run: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE)
 
 run-terminal: $(ISO_FILE)
-	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -display curses
+	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio
 
 debug: $(ISO_FILE) $(SYM_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -s -S -display curses

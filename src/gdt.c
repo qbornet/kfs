@@ -1,5 +1,4 @@
 #include "gdt.h"
-#include "lib/cpl.h"
 
 sd_t               g_sdes[16];
 cpu_state_t       *g_cpu_state; // In the future should be an array of CPU

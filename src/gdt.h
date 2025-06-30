@@ -52,6 +52,7 @@
 #define ACCESS_DPL_RING_2          2
 #define ACCESS_DPL_RING_3          3
 
+#include "lib/cpl.h"
 #include "lib/io.h"
 #include "lib/mem.h"
 #include "tss.h"

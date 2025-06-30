@@ -9,10 +9,14 @@ static __always_inline void putnbr_hex_upper(unsigned long nbr, int *ret)
         uint8_t nibble = (nbr >> shift) & 0xF;
         if (!nibble && !written) continue;
         written++;
+        serial_putchar(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
         terminal_putchar(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
         *ret += 1;
     }
-    if (!written) terminal_putchar('0');
+    if (!written) {
+        serial_putchar('0');
+        terminal_putchar('0');
+    }
 }
 
 static __always_inline void putnbr_hex(unsigned long nbr, int *ret)
@@ -24,10 +28,14 @@ static __always_inline void putnbr_hex(unsigned long nbr, int *ret)
         uint8_t nibble = (nbr >> shift) & 0xF;
         if (!nibble && !written) continue;
         written++;
+        serial_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
         terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
         *ret += 1;
     }
-    if (!written) terminal_putchar('0');
+    if (!written) {
+        serial_putchar('0');
+        terminal_putchar('0');
+    }
 }
 
 static __always_inline void print_hex(char c, unsigned long nbr, int *ret)
@@ -42,6 +50,7 @@ static __always_inline void print_hex(char c, unsigned long nbr, int *ret)
 static inline void print_udec(unsigned long nbr, int *ret)
 {
     if (nbr >= 10) print_udec(nbr / 10, ret);
+    serial_putchar('0' + nbr % 10);
     terminal_putchar('0' + nbr % 10);
     *ret += 1;
 }
@@ -51,6 +60,7 @@ static __always_inline void print_dec(long nbr, int *ret)
     unsigned int nb = 0;
 
     if (nbr < 0) {
+        serial_putchar('-');
         terminal_putchar('-');
         nb = (int)(nbr * -1);
         *ret += 1;
@@ -64,6 +74,7 @@ static __always_inline void putnbr_pointer(unsigned long long nbr, int *ret)
 {
     for (int shift = 28; shift >= 0; shift -= 4) {
         uint8_t nibble = (nbr >> shift) & 0xF;
+        serial_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
         terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
         *ret += 1;
     }
@@ -72,6 +83,7 @@ static __always_inline void putnbr_pointer(unsigned long long nbr, int *ret)
 static __always_inline void print_pointer(void *addr, int *ret)
 {
     uintptr_t addr_nbr = (uintptr_t)addr;
+    serial_write("0x");
     terminal_writestring("0x", 0);
     putnbr_pointer(addr_nbr, ret);
 }
@@ -124,6 +136,7 @@ void decode_fmt_string(
             break;
         case 's':
             to_print = (const char *)va_arg(*ap, const char *);
+            serial_write(to_print);
             terminal_writestring(to_print, 0);
             *index += 2;
             break;
@@ -145,13 +158,16 @@ void decode_fmt_string(
                 if (char_modifier.writen < char_modifier.max) {
                     for (uint32_t i = 0;
                          i < (char_modifier.max - char_modifier.writen);
-                         i++)
+                         i++) {
+                        serial_putchar(char_modifier.leading);
                         terminal_putchar(char_modifier.leading);
+                    }
                 }
                 opt->len_modifier = len_modifier;
                 opt->pad_char_modifier = char_modifier;
                 decode_fmt_string(&str[2], opt, index, ap, ret);
             } else {
+                serial_write("(format not handle)");
                 terminal_writestring("(format not handle)", 0);
             }
     }

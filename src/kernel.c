@@ -70,6 +70,7 @@ void kernel_main(uint32_t magic, uint32_t mbi)
 
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
+    serial_init();
     init_cpu_state();
     init_gdt();
 
@@ -77,11 +78,12 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     struct gdt gdt_ptr;
     asm volatile("sgdt %0"
                  : "=m"(gdt_ptr));
+    serial_write("toto\n");
     print_memory((void *)0x800, 0x40);
     print_memory((void *)gdt_ptr.address, 0x40);
     print_memory((void *)&val, 0x02);
     printk("\nCPL: %X\n", get_current_level_privilege());
-    jump_usermode();
+    // jump_usermode();
     while (1) {
         asm volatile("hlt");
     }
