@@ -13,6 +13,7 @@ void serial_init(void)
 
 void serial_putchar(char c)
 {
+    // wait for com1 to be available and print character
     while ((inb(COM1_PORT + 5) & 0x20) == 0);
     outb(c, COM1_PORT);
 }

@@ -1,7 +1,7 @@
 #ifndef PRINTK_H
 #define PRINTK_H
 #include "../lib/shared/defs.h"
-#include "../serial.h"
+#include "../serial/serial.h"
 #include "../vga/vga.h"
 #include "ctype.h"
 #include "mem.h"

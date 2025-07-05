@@ -14,15 +14,17 @@ OBJ_DIR = obj
 ASM_DIR = $(SRC_DIR)/asm
 VGA_DIR = $(SRC_DIR)/vga
 LIB_DIR = $(SRC_DIR)/lib
+SERIAL_DIR = $(SRC_DIR)/serial
 ISO_DIR = iso
 
-C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c)
+C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard $(SERIAL_DIR)/*.c)
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
-HEADERS = $(wildcard $(SRC_DIR)/**/*.h) $(wildcard $(VGA_DIR)/**/*.h) $(wildcard $(LIB_DIR)/**/*.h)
+HEADERS = $(wildcard $(SRC_DIR)/**/*.h) $(wildcard $(VGA_DIR)/**/*.h) $(wildcard $(LIB_DIR)/**/*.h) $(wildcard $(SERIAL_DIR)/**/*.h)
 
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
 VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
 LIB_OBJECTS = $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(filter $(LIB_DIR)/%.c, $(C_SOURCES)))
+SERIAL_OBJECTS = $(patsubst $(SERIAL_DIR)/%.c, $(OBJ_DIR)/serial/%.o $(filter $(SERIAL_DIR), $(C_SOURCES)))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 
 OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS)
@@ -39,6 +41,7 @@ directories:
 	mkdir -p $(OBJ_DIR)/asm
 	mkdir -p $(OBJ_DIR)/vga
 	mkdir -p $(OBJ_DIR)/lib
+	mkdir -p $(OBJ_DIR)/serial
 
 format: $(C_SOURCES) $(HEADERS)
 	@$(FORMAT) -i $(HEADERS) $(C_SOURCES)
@@ -72,7 +75,7 @@ $(ISO_FILE): $(BIN_FILE)
 		-boot-info-table iso
 
 run: $(ISO_FILE)
-	qemu-system-i386 -cdrom $(ISO_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -serial mon:stdio
 
 run-terminal: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio
