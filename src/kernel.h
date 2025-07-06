@@ -4,6 +4,7 @@
 #include "lib/io.h"
 #include "lib/cpl.h"
 #include "lib/mem.h"
+#include "paging/paging.h"
 #include "multiboot2.h"
 #include "vga/vga.h"
 

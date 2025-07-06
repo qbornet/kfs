@@ -1,5 +1,6 @@
 #ifndef PAGING_H
 #define PAGING_H
+#include "../lib/io.h"
 #include "../lib/mem.h"
 #include "../lib/shared/defs.h"
 #include <stdbool.h>
@@ -35,17 +36,18 @@ typedef struct s_page_table_entry {
     uint8_t  dirty : 1;
     uint8_t  page_attribute : 1;
     uint8_t  global : 1;
-    uint8_t  ignored : 4;
+    uint8_t  ignored : 3;
     uint32_t address : 20;
-} __attribute__((packed))     page_table_entry_t;
+} __attribute__((packed)) page_table_entry_t;
 
 // Create basic page.
-typedef unsigned char         page_t[4096];
+typedef uint8_t           page_frame_t[4096];
 
 /*
  * pagging global structure for virtual addressing
  * */
-extern page_directory_entry_t g_page_directory[1024];
-extern page_table_entry_t     g_page_table[1024];
+
+// Init paging
+void                      init_paging(void);
 
 #endif

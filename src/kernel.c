@@ -73,16 +73,18 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     serial_init();
     init_cpu_state();
     init_gdt();
+    init_paging();
 
-    int        val = 42;
-    struct gdt gdt_ptr;
-    asm volatile("sgdt %0"
-                 : "=m"(gdt_ptr));
-    print_memory((void *)0x800, 0x40);
-    print_memory((void *)gdt_ptr.address, 0x40);
-    print_memory((void *)&val, 0x02);
-    printk("\nCPL: %X\n", get_current_level_privilege());
-    jump_usermode();
+    // int        val = 42;
+    // struct gdt gdt_ptr;
+    // asm volatile("sgdt %0"
+    //              : "=m"(gdt_ptr));
+    ////print_memory((void *)0x800, 0x40);
+    // print_memory((void *)gdt_ptr.address, 0x40);
+    // print_memory((void *)&val, 0x02);
+    //  printk("\nCPL: %X\n", get_current_level_privilege());
+    //  jump_usermode();
+    printk("Paging ON !\n");
     while (1) {
         asm volatile("hlt");
     }
