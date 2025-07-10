@@ -74,17 +74,23 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     init_cpu_state();
     init_gdt();
     init_paging();
+    init_malloc_ptr();
 
     // int        val = 42;
     // struct gdt gdt_ptr;
     // asm volatile("sgdt %0"
     //              : "=m"(gdt_ptr));
-    ////print_memory((void *)0x800, 0x40);
+    // print_memory((void *)0x800, 0x40);
     // print_memory((void *)gdt_ptr.address, 0x40);
     // print_memory((void *)&val, 0x02);
-    //  printk("\nCPL: %X\n", get_current_level_privilege());
-    //  jump_usermode();
-    printk("Paging ON !\n");
+    // printk("\nCPL: %X\n", get_current_level_privilege());
+    // jump_usermode();
+    uint32_t *ptr = get_virtual_address();
+    if (ptr == NULL) {
+        printk("VIRTUAL ADDRESS FETCH DONE\n");
+    } else {
+        printk("virtual addres is: %p\n", ptr);
+    }
     while (1) {
         asm volatile("hlt");
     }

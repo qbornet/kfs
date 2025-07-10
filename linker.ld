@@ -30,5 +30,6 @@ SECTIONS
     {
          *(COMMON)
          *(.bss)
+         g_mem_ptr = .;
     }
 }
