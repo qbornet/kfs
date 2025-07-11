@@ -15,7 +15,7 @@
 // 4 KiB Page size
 #define PAGE_SIZE         0x1000
 
-// Available free memory pointer (meaning that it's the last known available, 
+// Available free memory pointer (meaning that it's the last known available,
 // free memory)
 extern uintptr_t g_free_mem_ptr;
 

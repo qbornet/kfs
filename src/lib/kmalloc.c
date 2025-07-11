@@ -18,7 +18,7 @@ static void     *malloc(size_t size)
         return NULL;
     }
     if (!g_mem_ptr) g_mem_ptr = g_free_mem_ptr;
-    g_mem_ptr = (g_mem_ptr + 7) & ~7; // Aligned to uint8_t (byte aligned)
+    g_mem_ptr = (g_mem_ptr + 3) & ~3; // Alignment for 4-byte.
 
     ptr = (void *)g_mem_ptr;
     g_mem_ptr += size;
@@ -26,15 +26,16 @@ static void     *malloc(size_t size)
         printk("Error out of kernel memory\n");
         return NULL;
     }
-    g_free_mem_ptr += (size + 7) & ~7;
+    g_free_mem_ptr += (size + 3) & ~3; // Alignment for 4-byte
     g_malloc_count++;
     return ptr;
 }
 
 void init_malloc_ptr(void)
 {
+    uint32_t mem_aligned = (g_mem_ptr + 3) & ~3; // Alignment for 4-byte.
     g_malloc_count = 0;
-    g_mem_ptr = (uintptr_t)&g_mem_ptr + HEAP_OFFSET_START;
+    g_mem_ptr = (uintptr_t)&mem_aligned + HEAP_OFFSET_START;
     g_free_mem_ptr = g_mem_ptr;
     g_mem_end_ptr = g_mem_ptr + HEAP_SIZE;
     printk("start: %lX, end: %lX, free_mem_ptr: %lX\n",

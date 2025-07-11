@@ -5,56 +5,6 @@
  * https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html#kernel_002ec
  * */
 
-/*
-size = *(uint32_t *)mbi;
-printk("Announced mbi size: %X\n", size);
-for (tag = (struct multiboot_tag *)(mbi + 8);
-     tag->type != MULTIBOOT_TAG_TYPE_END;
-     tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag
-                                    + ((tag->size + 7) & ~7))) {
-    printk("Tag: %X, Size: %X\n", tag->type, tag->size);
-    switch (tag->type) {
-        case MULTIBOOT_TAG_TYPE_CMDLINE:
-            {
-                struct multiboot_tag_string *tag_string
-                    = (struct multiboot_tag_string *)tag;
-                printk("Command line = %s\n", tag_string->string);
-                break;
-            }
-        case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-            printk("Boot loader name = %s\n",
-                   ((struct multiboot_tag_string *)tag)->string);
-            break;
-        case MULTIBOOT_TAG_TYPE_MODULE:
-            printk("Boot at 0x%X-0x%X. Command line %s\n",
-                   ((struct multiboot_tag_module *)tag)->mod_start,
-                   ((struct multiboot_tag_module *)tag)->mod_end,
-                   ((struct multiboot_tag_module *)tag)->cmdline);
-            break;
-        case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
-            {
-                uint32_t total_mem
-                    = ((struct multiboot_tag_basic_meminfo *)tag)->mem_lower
-                    + ((struct multiboot_tag_basic_meminfo *)tag)
-                          ->mem_upper;
-                printk(
-                    "Total_mem: %lu KiB lower_mem: %u, upper_mem: %u\n",
-                    total_mem,
-                    ((struct multiboot_tag_basic_meminfo *)tag)->mem_lower,
-                    ((struct multiboot_tag_basic_meminfo *)tag)->mem_upper);
-                break;
-            }
-        case MULTIBOOT_TAG_TYPE_APM:
-            {
-                // struct multiboot_tag_apm *apm_table
-                //     = (struct multiboot_tag_apm *)tag;
-                break;
-            }
-        default: break;
-    }
-}
-*/
-
 void kernel_main(uint32_t magic, uint32_t mbi)
 {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
@@ -65,16 +15,16 @@ void kernel_main(uint32_t magic, uint32_t mbi)
         printk("UNALIGNED MBI: %lX\n", mbi);
         return;
     }
-    // struct multiboot_tag *tag;
-    // unsigned size;
+    uint32_t mem_in_mib;
 
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
     serial_init();
     init_cpu_state();
     init_gdt();
-    init_paging();
-    init_malloc_ptr();
+    mem_in_mib = get_memory_max_value(mbi);
+    init_paging(mem_in_mib);
+    // init_malloc_ptr();
 
     // int        val = 42;
     // struct gdt gdt_ptr;
@@ -85,12 +35,12 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     // print_memory((void *)&val, 0x02);
     // printk("\nCPL: %X\n", get_current_level_privilege());
     // jump_usermode();
-    uint32_t *ptr = get_virtual_address();
-    if (ptr == NULL) {
-        printk("VIRTUAL ADDRESS FETCH DONE\n");
-    } else {
-        printk("virtual addres is: %p\n", ptr);
-    }
+    // uint32_t *ptr = get_virtual_address();
+    // if (ptr == NULL) {
+    //     printk("VIRTUAL ADDRESS FETCH DONE\n");
+    // } else {
+    //     printk("virtual addres is: %p\n", ptr);
+    // }
     while (1) {
         asm volatile("hlt");
     }

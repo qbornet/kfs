@@ -29,6 +29,7 @@ static __always_inline void flush_tlb(uint32_t vaddr)
                  : "memory");
 }
 
+// set cr3 page directory in register
 static __always_inline void set_cr3(uintptr_t page_directory)
 {
     asm volatile(".intel_syntax noprefix\n\t"
@@ -135,24 +136,26 @@ void setup_identity_paging(void)
     memset(g_page_directory, 0, sizeof(g_page_directory));
     memset(g_page_table, 0, sizeof(g_page_table));
 
-    g_page_directory[0].present = 1;
-    g_page_directory[0].read_write = 1;
-    g_page_directory[0].user_supervisor = 0;
-    g_page_directory[0].address = ((uint32_t)g_page_table) >> 12;
-    for (uint32_t i = 0; i < 512; i++) {
+    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].present = 1;
+    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].read_write = 1;
+    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].user_supervisor = 0;
+    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].address
+        = ((uint32_t)g_page_table) >> 12;
+    for (uint32_t i = 0; i < 1024; i++) {
         g_page_table[i].present = 1;
         g_page_table[i].read_write = 1;
         g_page_table[i].user_supervisor = 0;
         g_page_table[i].address = i;
-        flush_tlb(i);
     }
 }
 
-void init_paging(void)
+void init_paging(uint32_t mem_in_mib)
 {
+    uint32_t max_mem = 0x100000 * mem_in_mib;
+    printk("Memory available: %luMiB, in byte: %luB\n", mem_in_mib, max_mem);
     printk("start identity paging\n");
     setup_identity_paging();
     printk("finished identity paging\n");
-    set_cr3((uintptr_t)g_page_directory);
+    set_cr3((uintptr_t)&g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX]);
     set_cr0(1 << 31);
 }

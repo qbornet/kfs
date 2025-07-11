@@ -8,5 +8,6 @@
 #include "multiboot2.h"
 #include "paging/paging.h"
 #include "vga/vga.h"
+#include "multiboot2_info.h"
 
 #endif
