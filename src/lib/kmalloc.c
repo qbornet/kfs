@@ -1,6 +1,7 @@
 #include "kmalloc.h"
 
-extern uintptr_t g_mem_ptr;
+extern uint32_t *g_kernel_end;
+static uintptr_t g_mem_ptr;
 static uintptr_t g_mem_end_ptr;
 static uint32_t  g_malloc_count;
 uintptr_t        g_free_mem_ptr;
@@ -33,6 +34,7 @@ static void     *malloc(size_t size)
 
 void init_malloc_ptr(void)
 {
+    g_mem_ptr = (uint32_t)g_kernel_end;
     uint32_t mem_aligned = (g_mem_ptr + 3) & ~3; // Alignment for 4-byte.
     g_malloc_count = 0;
     g_mem_ptr = (uintptr_t)&mem_aligned + HEAP_OFFSET_START;

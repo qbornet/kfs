@@ -3,6 +3,7 @@
 #include "../lib/io.h"
 #include "../lib/mem.h"
 #include "../lib/shared/defs.h"
+// #include "phys_alloc.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -61,14 +62,18 @@ typedef struct s_page_table_entry {
     uint32_t address : 20;
 } __attribute__((packed)) page_table_entry_t;
 
-/*
- * pagging global structure for virtual addressing
- * */
-
 // Init paging
 void                      init_paging(uint32_t mem_in_mib);
 uint32_t                 *get_virtual_address(void);
+void                      setup_identity_paging(void);
+void                      enable_paging(void);
+void                      remove_identity_mapping(void);
 
-extern uint32_t           g_end;
+/*
+ * page directory & table global variable
+ * */
+// page_directory_entry_t    g_page_directory[1024]
+// __attribute__((aligned(4096))); page_table_entry_t        g_page_table[1024]
+// __attribute__((aligned(4096)));
 
 #endif

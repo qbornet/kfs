@@ -5,26 +5,22 @@
  * https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html#kernel_002ec
  * */
 
-void kernel_main(uint32_t magic, uint32_t mbi)
+void kernel_main(uint32_t mbi)
 {
-    if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-        printk("MULTIBOOT2_HEADER_FAILED: %lX\n", magic);
-        return;
-    }
     if (mbi & 7) {
         printk("UNALIGNED MBI: %lX\n", mbi);
         return;
     }
-    uint32_t mem_in_mib;
+    // uint32_t mem_in_mib;
 
     terminal_initialize();
     terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
     serial_init();
     init_cpu_state();
     init_gdt();
-    mem_in_mib = get_memory_max_value(mbi);
-    init_paging(mem_in_mib);
-    // init_malloc_ptr();
+    // mem_in_mib = get_memory_max_value(mbi);
+    // init_paging(mem_in_mib);
+    //  init_malloc_ptr();
 
     // int        val = 42;
     // struct gdt gdt_ptr;

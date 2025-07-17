@@ -63,7 +63,7 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $< -o $@
 
 $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
-	$(NASM) -f elf32 $< -o $@
+	$(NASM) -f elf32 -g -F dwarf $< -o $@
 
 
 $(ISO_FILE): $(BIN_FILE)
