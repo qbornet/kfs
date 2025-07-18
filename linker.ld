@@ -13,14 +13,6 @@ SECTIONS
         *(.multiboot)
         *(.boot)
     }
-    .debug_info ALIGN(4K) : 
-    {
-        *(.debug_info)
-    }
-    .debug_line ALIGN(4K) :
-    {
-        *(.debug_line)
-    }
 
     . = ALIGN(4K);
     _boot_end = .;
@@ -29,9 +21,7 @@ SECTIONS
 
     .text ALIGN(4K) : AT(_boot_end)
     {
-        _text_start = .;
         *(.text)
-        _text_end = .;
     }
 
     . = ALIGN(4K);

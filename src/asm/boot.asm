@@ -25,6 +25,12 @@ global g_page_table
 g_page_table:
     times 1024 dd 0
 
+align 4096
+global g_page_table_kernel
+g_page_table_kernel:
+    times 1024 dd 0
+
+
 ; Boot stack in low memory
 
 align 16
@@ -54,7 +60,7 @@ _start:
     call enable_paging
     
     ; Call early kernel
-    call kernel_early_main
+    call jump_to_higher_half
     
     ; Should never return
     cli
@@ -78,37 +84,38 @@ setup_identity_paging:
     xor eax, eax
     rep stosd
 
-    ; Fill page table - map first 4MB
+    ; Fill IDENTITY page table - map first 4MB (0x0 -> 0x0)
     mov edi, g_page_table
     xor ebx, ebx            ; Physical address counter
     mov ecx, 1024
-.fill_page_table:
+    .fill_page_table:
     mov eax, ebx
     or eax, 0x003           ; Present, R/W
     stosd
     add ebx, 0x1000         ; Next 4KB page
     loop .fill_page_table
 
-    ; Get physical address of page table
-    ; We need to ensure this is a physical address
-    mov eax, g_page_table
-    
-    ; Check if this is already a physical address (< 0x40000000)
-    cmp eax, 0x40000000
-    jb .is_physical
-    
-    ; If it's a virtual address, convert to physical
-    sub eax, 0xC0000000
-    
-.is_physical:
+    ; Fill KERNEL page table - map physical 1MB-5MB to virtual 0xC0000000
+    mov edi, g_page_table_kernel
+    mov ebx, 0x100000       ; Start at 1MB physical
+    mov ecx, 1024
+    .fill_kernel_table:
+    mov eax, ebx
     or eax, 0x003           ; Present, R/W
-    
-    ; Set up identity mapping at PD[0] (maps 0x00000000-0x003FFFFF)
+    stosd
+    add ebx, 0x1000         ; Next 4KB page
+    loop .fill_kernel_table
+
+    ; Install IDENTITY page table at PD[0]
+    mov eax, g_page_table
+    or eax, 0x003           ; Present, R/W
     mov [g_page_directory], eax
-    
-    ; Set up higher half mapping at PD[768] (maps 0xC0000000-0xC03FFFFF)
+
+    ; Install KERNEL page table at PD[768] - THIS IS THE FIX!
+    mov eax, g_page_table_kernel    ; Use g_page_table_kernel, not g_page_table!
+    or eax, 0x003                   ; Present, R/W
     mov [g_page_directory + 768 * 4], eax
-    
+
     pop edx
     pop ecx
     pop ebx
@@ -117,6 +124,7 @@ setup_identity_paging:
     pop ebp
     ret
 
+
 enable_paging:
     push ebp
     mov ebp, esp
@@ -124,15 +132,6 @@ enable_paging:
 
     ; Ensure we're using physical address for page directory
     mov eax, g_page_directory
-    
-    ; Check if this is already a physical address
-    cmp eax, 0x40000000
-    jb .load_cr3
-    
-    ; Convert to physical if needed
-    sub eax, 0xC0000000
-    
-.load_cr3:
     mov cr3, eax
     
     ; Enable paging by setting bit 31 in CR0
@@ -154,8 +153,7 @@ extern g_saved_mbi_addr
 jump_to_higher_half:
     ; We need to jump to an absolute address in higher half
     ; Calculate the address properly
-    mov eax, higher_half ; Adjust based on where .text is loaded
-    jmp eax
+    jmp higher_half
 
 section .bss
 align 16
@@ -165,7 +163,24 @@ stack_bottom:
     resb 0x4000
 stack_top:
 
+
 section .text
+
+; Remove identity mapping function
+global higher_half
+global remove_identity_mapping
+
+remove_identity_mapping:
+    ; Clear the identity mapping at PD[0]
+    ; g_page_directory is now accessed at its virtual address
+    mov dword [g_page_directory + 0xC0000000], 0
+    
+    ; Flush TLB by reloading CR3
+    mov eax, cr3
+    mov cr3, eax
+    
+    ret
+
 higher_half:
     ; Now executing at 0xC0000000+
     ; Fix stack pointer to higher half
@@ -185,15 +200,3 @@ higher_half:
     hlt
     jmp .hang
 
-; Remove identity mapping function
-global remove_identity_mapping
-remove_identity_mapping:
-    ; Clear the identity mapping at PD[0]
-    ; g_page_directory is now accessed at its virtual address
-    mov dword [g_page_directory + 0xC0000000], 0
-    
-    ; Flush TLB by reloading CR3
-    mov eax, cr3
-    mov cr3, eax
-    
-    ret
