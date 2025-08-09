@@ -60,7 +60,7 @@ _start:
     call enable_paging
     
     ; Call early kernel
-    call jump_to_higher_half
+    call kernel_early_main
     
     ; Should never return
     cli
@@ -190,8 +190,9 @@ higher_half:
     ; Remove identity mapping
     call remove_identity_mapping
     
-    ; Call kernel main with saved MBI
+    ; Call kernel main with BOTH params: push mbi (high addr), push magic
     push dword [g_saved_mbi_addr]
+    push 0x36d76289  ; MULTIBOOT2_BOOTLOADER_MAGIC (hardcoded, since checked earlier)
     call kernel_main
     
     ; Halt if kernel returns
