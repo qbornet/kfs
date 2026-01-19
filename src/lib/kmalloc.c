@@ -40,34 +40,34 @@ void init_malloc_ptr(void)
     g_mem_ptr = (uintptr_t)&mem_aligned + HEAP_OFFSET_START;
     g_free_mem_ptr = g_mem_ptr;
     g_mem_end_ptr = g_mem_ptr + HEAP_SIZE;
-    printk("start: %lX, end: %lX, free_mem_ptr: %lX\n",
+    printk("start: %X, end: %X, free_mem_ptr: %X\n",
            g_mem_ptr,
            g_mem_end_ptr,
            g_free_mem_ptr);
     char *old = NULL;
     char *p = (char *)malloc(10);
 
-    printk("start: %lX, end: %lX, free_mem_ptr: %lX\n",
+    printk("start: %X, end: %X, free_mem_ptr: %X\n",
            g_mem_ptr,
            g_mem_end_ptr,
            g_free_mem_ptr);
-    printk("[%ld]: Malloc pointer returned: %p\n", g_malloc_count, p);
+    printk("[%d]: Malloc pointer returned: %p\n", g_malloc_count, p);
 
     strcpy(p, "Hello, Worl");
     printk("p contains: %s\n", p);
 
     old = p;
     p = (char *)malloc(10);
-    printk("start: %lX, end: %lX, free_mem_ptr: %lX\n",
+    printk("start: %X, end: %X, free_mem_ptr: %X\n",
            g_mem_ptr,
            g_mem_end_ptr,
            g_free_mem_ptr);
-    printk("[%ld]: Malloc pointer returned: %p\n", g_malloc_count, p);
+    printk("[%d]: Malloc pointer returned: %p\n", g_malloc_count, p);
 
     strcpy(p, "totoismage");
     printk("p contains: %s, old contains: %s\n", p, old);
     p = (char *)malloc(1000);
-    printk("start: %lX, end: %lX, free_mem_ptr: %lX\n",
+    printk("start: %X, end: %X, free_mem_ptr: %X\n",
            g_mem_ptr,
            g_mem_end_ptr,
            g_free_mem_ptr);

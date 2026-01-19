@@ -9,11 +9,11 @@
 void kernel_main(uint32_t magic, uint32_t mbi)
 {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-        printk("MAGIC FAILED: %lX\n", magic);
+        printk("MAGIC FAILED: %X\n", magic);
         return;
     }
     if (mbi & 7) {
-        printk("UNALIGNED MBI: %lX\n", mbi);
+        printk("UNALIGNED MBI: %X\n", mbi);
         return;
     }
     // uint32_t mem_in_mib;

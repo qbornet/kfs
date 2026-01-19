@@ -158,7 +158,7 @@ void init_paging(uint32_t mem_in_mib)
 {
     uint32_t max_mem = 0x100000 * (mem_in_mib - 1);
 
-    printk("Memory available: %luMiB, in byte: %luB\n", mem_in_mib, max_mem);
+    printk("Memory available: %uMiB, in byte: %uB\n", mem_in_mib, max_mem);
     printk("start identity paging\n");
     // init_frame_page(max_mem);
     setup_identity_paging();

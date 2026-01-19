@@ -1,6 +1,8 @@
-CC = i686-elf-gcc
-LD = i686-elf-ld
-OBJCOPY = i686-elf-objcopy
+# Conditional statement for nixos env or not.
+CC := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-gcc,i686-elf-gcc)
+LD := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-ld,i686-elf-ld)
+OBJCOPY := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-objcopy,i686-elf-objcopy))
+
 NASM = nasm
 TIDY = clang-tidy
 FORMAT = clang-format
@@ -39,6 +41,7 @@ ISO_FILE = nilbogos.iso
 all: directories format tidy $(BIN_FILE)
 
 directories:
+	@echo $(CC)
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(OBJ_DIR)/asm
 	mkdir -p $(OBJ_DIR)/vga
