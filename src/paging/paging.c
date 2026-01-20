@@ -1,4 +1,4 @@
-#include "paging.h"
+#include <paging/paging.h>
 
 extern page_directory_entry_t g_page_directory[];
 extern page_table_entry_t     g_page_table[];

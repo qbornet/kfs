@@ -1,9 +1,9 @@
 #ifndef PAGING_H
 #define PAGING_H
-#include "../lib/io.h"
-#include "../lib/mem.h"
-#include "../lib/shared/defs.h"
 // #include "phys_alloc.h"
+#include <lib/io.h>
+#include <lib/mem.h>
+#include <lib/shared/defs.h>
 #include <stdbool.h>
 #include <stdint.h>
 

@@ -52,13 +52,13 @@
 #define ACCESS_DPL_RING_2          2
 #define ACCESS_DPL_RING_3          3
 
-#include "lib/cpl.h"
-#include "lib/io.h"
-#include "lib/mem.h"
-#include "tss.h"
+#include <lib/cpl.h>
+#include <lib/io.h>
+#include <lib/mem.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <tss.h>
 
 // segment_descriptor based on the intel IA-32
 struct segment_descriptor {

@@ -1,7 +1,7 @@
-#include "gdt.h"
+#include <gdt.h>
 
 sd_t               g_sdes[16];
-cpu_state_t       *g_cpu_state; // In the future should be an array of CPU
+cpu_state_t        g_cpu_state; // In the future should be an array of CPU
 extern void        stack_top(void);
 
 static inline void iomap_set(uint16_t *port, size_t size)
@@ -9,7 +9,7 @@ static inline void iomap_set(uint16_t *port, size_t size)
     for (size_t i = 0; i < size; i++) {
         uint32_t index = IOMAP_INDEX(port[i]);
         uint8_t  bit = IOMAP_BIT(port[i]);
-        g_cpu_state->io_bitmap[index] |= (1 << bit);
+        g_cpu_state.io_bitmap[index] |= (1 << bit);
     }
 }
 
@@ -18,7 +18,7 @@ static inline void iomap_clear(uint16_t *port, size_t size)
     for (size_t i = 0; i < size; i++) {
         uint32_t index = IOMAP_INDEX(port[i]);
         uint8_t  bit = IOMAP_BIT(port[i]);
-        g_cpu_state->io_bitmap[index] &= ~(1 << bit);
+        g_cpu_state.io_bitmap[index] &= ~(1 << bit);
     }
 }
 
@@ -26,16 +26,16 @@ static inline uint8_t iomap_test(uint16_t port)
 {
     uint32_t index = IOMAP_INDEX(port);
     uint8_t  bit = IOMAP_BIT(port);
-    return (g_cpu_state->io_bitmap[index] & (1 << bit)) ? 1 : 0;
+    return (g_cpu_state.io_bitmap[index] & (1 << bit)) ? 1 : 0;
 }
 
 static __always_inline void write_tss_entry(void)
 {
-    // save stack segment selector;
-    g_cpu_state->tss.ss0 = 0x24;
+    // save stack segment selector
+    g_cpu_state.tss.ss0 = 0x18;
 
     // call of stack_top to save kernel stack address
-    g_cpu_state->tss.esp0 = (uint32_t)stack_top;
+    g_cpu_state.tss.esp0 = (uint32_t)stack_top;
 
     // Authorize 0x3d4 and 0x3d5 port (update vga cursor)
     iomap_clear((uint16_t[]){ 0x3d4, 0x3d5 }, 2);
@@ -48,7 +48,7 @@ static __always_inline void write_tss_entry(void)
 static __always_inline void load_tss(void)
 {
     asm volatile(".intel_syntax noprefix\n\t"
-                 "mov ax, 0x40 \n\t"
+                 "mov ax, 0x38 \n\t"
                  "ltr ax\n\t"
                  ".att_syntax prefix\n\t"
                  :
@@ -105,10 +105,9 @@ static __always_inline void reload_segments(void)
                      "mov ds, ax\n\t"
                      "mov es, ax\n\t"
                      "mov fs, ax\n\t"
+                     "mov gs, ax\n\t"
                      "mov ax, 0x18\n\t"
                      "mov ss, ax\n\t"
-                     "mov ax, 0x20\n\t"
-                     "mov gs, ax\n\t"
                      ".att_syntax prefix\n\t"
                      :
                      :
@@ -120,15 +119,6 @@ static __always_inline void load_gdt(void)
     struct gdt gdt;
     gdt.size = sizeof(g_sdes) - 1;
     gdt.address = (uint32_t)&g_sdes;
-
-    asm volatile("cld\n\t"
-                 "mov %0, %%esi\n\t"
-                 "mov %1, %%edi\n\t"
-                 "mov %2, %%ecx\n\t"
-                 "rep movsb\n\t"
-                 :
-                 : "r"(&g_sdes), "r"(0x800), "r"(sizeof(g_sdes))
-                 : "esi", "edi", "ecx", "memory");
     asm volatile("lgdt %0\n\t" ::"m"(gdt));
 }
 
@@ -163,15 +153,18 @@ __attribute__((naked, noreturn)) void jump_usermode(void)
 void init_cpu_state(void)
 {
     // zero tss and disable all io ports.
-    memset(&g_cpu_state->tss, 0, sizeof(tss_segment_t));
-    memset(g_cpu_state->io_bitmap, 0xFF, sizeof(g_cpu_state->io_bitmap));
-    g_cpu_state->tss.iomap_base = (uint16_t)offsetof(cpu_state_t, io_bitmap);
-    g_cpu_state->end_marker = 0xFF;
+    memset(&g_cpu_state.tss, 0, sizeof(tss_segment_t));
+    memset(g_cpu_state.io_bitmap, 0xFF, sizeof(g_cpu_state.io_bitmap));
+    g_cpu_state.tss.iomap_base = (uint16_t)offsetof(cpu_state_t, io_bitmap);
+    g_cpu_state.end_marker = 0xFF;
     write_tss_entry();
 }
 
 void init_gdt(void)
 {
+    // DISABLE INTERUPT
+    // asm volatile("cli\n");
+
     // NULL DESCRIPTOR
     create_descriptor(0, 0, 0, 0, &g_sdes[0]);
 
@@ -183,7 +176,7 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_0),
         0x00000000,
-        0x000FFFFF,
+        0xFFFFFFFF,
         &g_sdes[1]);
 
     // KERNEL DATA DESCRIPTOR
@@ -194,7 +187,7 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_0),
         0x00000000,
-        0x000FFFFF,
+        0xFFFFFFFF,
         &g_sdes[2]);
 
     // KERNEL STACK DESCRIPTOR
@@ -205,20 +198,20 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_0),
         0x00000000,
-        0x000FFFFF,
+        0xFFFFFFFF,
         &g_sdes[3]);
 
     // create_descriptor(0, 0, 0, 0, &g_sdes[4]);
     // VGA DESCRIPTOR (this is only present so you can write string)
-    create_descriptor(
-        create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
-        create_access(
-            create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF),
-            ACCESS_DESCRIPTOR_TYPE_ON,
-            ACCESS_DPL_RING_3),
-        0x000B8000,
-        0x00000FFF,
-        &g_sdes[4]);
+    // create_descriptor(
+    //     create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_ON, FLAGS_AVL_64_OFF),
+    //     create_access(
+    //         create_type(TYPE_EXEC_OFF, TYPE_DC_OFF, TYPE_RW_ON, TYPE_A_OFF),
+    //         ACCESS_DESCRIPTOR_TYPE_ON,
+    //         ACCESS_DPL_RING_3),
+    //     0x000B8000,
+    //     0x00000FFF,
+    //     &g_sdes[4]);
 
     // USER CODE DESCRIPTOR
     create_descriptor(
@@ -228,8 +221,8 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_3),
         0x00000000,
-        0x000FFFFF,
-        &g_sdes[5]);
+        0xFFFFFFFF,
+        &g_sdes[4]);
 
     // USER DATA DESCRIPTOR
     create_descriptor(
@@ -239,8 +232,8 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_3),
         0x00000000,
-        0x000FFFFF,
-        &g_sdes[6]);
+        0xFFFFFFFF,
+        &g_sdes[5]);
 
     // USER STACK DESCRIPTOR
     create_descriptor(
@@ -250,12 +243,12 @@ void init_gdt(void)
             ACCESS_DESCRIPTOR_TYPE_ON,
             ACCESS_DPL_RING_3),
         0x00000000,
-        0x000FFFFF,
-        &g_sdes[7]);
+        0xFFFFFFFF,
+        &g_sdes[6]);
 
     // TASK STATE DESCRIPTOR
-    uint32_t base = (uint32_t)&g_cpu_state->tss;
-    uint32_t limit = (uint32_t)&g_cpu_state->end_marker - base + 1;
+    uint32_t base = (uint32_t)&g_cpu_state.tss;
+    uint32_t limit = (uint32_t)&g_cpu_state.end_marker - base + 1;
     create_descriptor(
         create_flags(FLAGS_GRANULARITY_OFF, FLAGS_MODE_OFF, FLAGS_AVL_64_OFF),
         create_access(
@@ -264,7 +257,7 @@ void init_gdt(void)
             ACCESS_DPL_RING_0),
         base,
         limit,
-        &g_sdes[8]);
+        &g_sdes[7]);
 
     load_gdt();
     load_tss();

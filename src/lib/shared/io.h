@@ -1,6 +1,6 @@
 #ifndef IO_H
 #define IO_H
-#include "defs.h"
+#include <lib/shared/defs.h>
 #include <stdint.h>
 
 #define BUILDIO(bwl, bw, type)                                               \

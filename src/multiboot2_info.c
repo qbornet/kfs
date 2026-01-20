@@ -1,4 +1,4 @@
-#include "multiboot2_info.h"
+#include <multiboot2_info.h>
 
 /*
  * Reference here for the tag system and handling from the grub2

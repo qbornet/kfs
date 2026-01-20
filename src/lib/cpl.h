@@ -1,6 +1,6 @@
 #ifndef CPL_H
 #define CPL_H
-#include "shared/defs.h"
+#include <lib/shared/defs.h>
 #include <stdbool.h>
 #include <stdint.h>
 

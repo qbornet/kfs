@@ -1,4 +1,4 @@
-#include "vga.h"
+#include <vga/vga.h>
 
 size_t                          g_terminal_row;
 size_t                          g_terminal_column;

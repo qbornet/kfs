@@ -1,4 +1,4 @@
-#include "cpl.h"
+#include <lib/cpl.h>
 
 static __always_inline uint32_t get_cpl(void)
 {

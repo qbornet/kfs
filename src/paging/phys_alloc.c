@@ -1,4 +1,4 @@
-#include "phys_alloc.h"
+#include <paging/phys_alloc.h>
 
 /*
  * Find the first physical address FREE available, return the address.

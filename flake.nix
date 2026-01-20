@@ -33,6 +33,9 @@
 
                 # Emulation
                 qemu
+
+                # debug tools
+                gdb
             ];
             buildInputs = [];
 
@@ -42,6 +45,7 @@
                 echo "🎯 Target: i686 (32-bit x86)"
                 echo "🛠  Compiler ($CC): $( $CC --version | head -n 1 )"
                 echo "------------------------------------------------------------------"
+                alias cc='bear -- make'
             '';
             NIXOS_DEV_ENV="ON";
         };

@@ -1,5 +1,5 @@
-#include "kernel.h"
-#include "multiboot2.h"
+#include <kernel.h>
+#include <multiboot2.h>
 
 /*
  * Reference here for the tag system and handling from the grub2
@@ -16,6 +16,8 @@ void kernel_main(uint32_t magic, uint32_t mbi)
         printk("UNALIGNED MBI: %X\n", mbi);
         return;
     }
+    int i = 0;
+    (void)i;
     // uint32_t mem_in_mib;
 
     terminal_initialize();
@@ -23,6 +25,7 @@ void kernel_main(uint32_t magic, uint32_t mbi)
     serial_init();
     init_cpu_state();
     init_gdt();
+    printk("Test writing before reloading segments\n");
     printk("Hello\n");
 
     while (1) {

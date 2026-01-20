@@ -1,6 +1,7 @@
-Checks: "-*,readability-identifier-naming"
+Checks: "-*,readability-identifier-naming,llvm-include-order"
 FormatStyle: File
 CheckOptions:
+  llvm-include-order.UserHeaders: "src,lib,kernel,paging,serial,vga"
   readability-identifier-naming.FunctionCase: "lower_case"
   readability-identifier-naming.VariableCase: "lower_case"
   readability-identifier-naming.GlobalVariablePrefix: "g_"

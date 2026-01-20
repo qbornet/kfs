@@ -1,6 +1,6 @@
 #ifndef MULTIBOOT2_INFO_H
 #define MULTIBOOT2_INFO_H
-#include "multiboot2.h"
+#include <multiboot2.h>
 #include <stdint.h>
 
 /*

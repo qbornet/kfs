@@ -1,8 +1,8 @@
 #ifndef KMALLOC_H
 #define KMALLOC_H
-#include "./shared/defs.h"
-#include "io.h"
-#include "string.h"
+#include <lib/io.h>
+#include <lib/shared/defs.h>
+#include <lib/string.h>
 #include <stddef.h>
 #include <stdint.h>
 

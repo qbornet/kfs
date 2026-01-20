@@ -1,4 +1,4 @@
-#include "printk.h"
+#include <lib/printk.h>
 
 static __always_inline void putnbr_hex_upper(unsigned long nbr, int *ret)
 {

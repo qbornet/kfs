@@ -1,5 +1,7 @@
-#include "lib/mem.h"
-#include "multiboot2.h"
+#include <gdt.h>
+#include <lib/io.h>
+#include <lib/mem.h>
+#include <multiboot2.h>
 #include <stdint.h>
 
 volatile uint32_t g_saved_mbi_addr;

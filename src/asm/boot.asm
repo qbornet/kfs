@@ -14,6 +14,13 @@ multiboot_header:
     dd 8        ; size = 8
 multiboot_header_end:
 
+; Boot stack in low memory before switching to high-half kernel.
+[section .init.bss nobits align=16] ; nobits = noprogsbits wont store in disk images. will be allocated and initiliaze at load. Needed for bss
+extern boot_stack_top
+boot_stack_bottom:
+    resb 0x4000     ; 16KB
+boot_stack_top:
+
 section .boot
 align 4096
 global g_page_directory
@@ -30,13 +37,6 @@ global g_page_table_kernel
 g_page_table_kernel:
     times 1024 dd 0
 
-
-; Boot stack in low memory
-
-align 16
-boot_stack_bottom:
-    resb 0x4000     ; 16KB
-boot_stack_top:
 
 section .boot
 global _start
@@ -95,6 +95,7 @@ setup_identity_paging:
     add ebx, 0x1000         ; Next 4KB page
     loop .fill_page_table
 
+
     ; Fill KERNEL page table - map physical 1MB-5MB to virtual 0xC0000000
     mov edi, g_page_table_kernel
     mov ebx, 0x100000       ; Start at 1MB physical
@@ -111,10 +112,16 @@ setup_identity_paging:
     or eax, 0x003           ; Present, R/W
     mov [g_page_directory], eax
 
-    ; Install KERNEL page table at PD[768] - THIS IS THE FIX!
+    ; Install KERNEL page table at PD[768]
     mov eax, g_page_table_kernel    ; Use g_page_table_kernel, not g_page_table!
     or eax, 0x003                   ; Present, R/W
     mov [g_page_directory + 768 * 4], eax
+
+    ; Map 0xB8000 (VGA MEMORY) to last page 0xC03FF0000
+    mov eax, 0xB8000        ; Physical address of buffer 0xB8000
+    or eax, 0x003            ; Present, R/W
+
+    mov [g_page_table_kernel + 1023 * 4], eax
 
     pop edx
     pop ecx
@@ -166,38 +173,40 @@ stack_top:
 
 section .text
 
-; Remove identity mapping function
 global higher_half
 global remove_identity_mapping
 
 remove_identity_mapping:
-    ; Clear the identity mapping at PD[0]
-    ; g_page_directory is now accessed at its virtual address
-    mov dword [g_page_directory + 0xC0000000], 0
+    ; g_page_directory address is physical,
+    ; We need to get the offset of the g_page_directory because we use virtual address now.
     
-    ; Flush TLB by reloading CR3
+    mov eax, g_page_directory      ; Load physical address
+    sub eax, 0x100000              ; Remove physical base
+    add eax, 0xC0000000            ; Add virtual base
+    
+    ; Now EAX points to the Page Directory in virtual memory
+    mov dword [eax], 0             
+
+    ; Flush TLB
     mov eax, cr3
     mov cr3, eax
     
     ret
 
 higher_half:
-    ; Now executing at 0xC0000000+
     ; Fix stack pointer to higher half
-    mov eax, stack_top      ; Get higher-half stack address
-    mov esp, eax            ; Use the proper higher-half stack
-    
-    ; Remove identity mapping
+    mov eax, stack_top
+    ; (Optional: if stack symbols are in .bss, they are already virtual in the new linker script
+    ;  so simpler: mov esp, stack_top is fine if stack_top is in a higher-half section)
+    mov esp, eax 
+
     call remove_identity_mapping
-    
-    ; Call kernel main with BOTH params: push mbi (high addr), push magic
+
     push dword [g_saved_mbi_addr]
-    push 0x36d76289  ; MULTIBOOT2_BOOTLOADER_MAGIC (hardcoded, since checked earlier)
+    push 0x36d76289
     call kernel_main
-    
-    ; Halt if kernel returns
+
     cli
 .hang:
     hlt
     jmp .hang
-

@@ -1,4 +1,4 @@
-#include "mem.h"
+#include <lib/mem.h>
 
 void *memset(void *ptr, uint8_t byte, size_t size)
 {

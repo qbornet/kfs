@@ -1,4 +1,4 @@
-#include "serial.h"
+#include <serial/serial.h>
 
 void serial_init(void)
 {

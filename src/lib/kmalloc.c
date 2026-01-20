@@ -1,4 +1,4 @@
-#include "kmalloc.h"
+#include <lib/kmalloc.h>
 
 extern uint32_t *g_kernel_end;
 static uintptr_t g_mem_ptr;

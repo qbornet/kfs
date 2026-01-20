@@ -1,7 +1,7 @@
 #ifndef VGA_H
 #define VGA_H
-#include "../lib/shared/io.h"
-#include "../lib/string.h"
+#include <lib/shared/io.h>
+#include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,7 +12,7 @@
 
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
-#define VGA_MEMORY 0xB8000
+#define VGA_MEMORY 0xC03FF000
 
 // enum text mode vga color.
 enum vga_color {

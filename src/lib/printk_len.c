@@ -1,4 +1,4 @@
-#include "printk.h"
+#include <lib/printk.h>
 
 static __always_inline void putnbr_hex_len(unsigned int             nbr,
                                            prm_pad_char_modifier_t *prm)

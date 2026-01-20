@@ -1,7 +1,7 @@
 # Conditional statement for nixos env or not.
 CC := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-gcc,i686-elf-gcc)
 LD := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-ld,i686-elf-ld)
-OBJCOPY := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-objcopy,i686-elf-objcopy))
+OBJCOPY := $(if $(NIXOS_DEV_ENV),i686-unknown-linux-gnu-objcopy,i686-elf-objcopy)
 
 NASM = nasm
 TIDY = clang-tidy
@@ -9,7 +9,7 @@ FORMAT = clang-format
 
 CFLAGS = -std=gnu99 -ffreestanding -Wall -Wextra -Werror -g3 -O0 -MMD \
          -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs
-LDFLAGS = -T linker.ld -nostdlib
+LDFLAGS = -T linker.ld -z noexecstack -nostdlib
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -54,7 +54,7 @@ format: $(C_SOURCES) $(HEADERS)
 
 tidy: $(C_SOURCES) $(HEADERS)
 	@$(TIDY) --fix --fix-errors --fix-notes --config-file=$(PWD)/.clang-tidy \
-		--quiet $(C_SOURCES) $(HEADERS) -- -std=gnu99
+		--quiet $(C_SOURCES) $(HEADERS) -- -Isrc -std=gnu99
 
 $(BIN_FILE): $(OBJECTS) 
 	$(LD) $(LDFLAGS) -o $@ $^
