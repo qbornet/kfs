@@ -1,7 +1,8 @@
 #include <paging/paging.h>
+#include <paging/phys_alloc.h>
 
-extern page_directory_entry_t g_page_directory[];
-extern page_table_entry_t     g_page_table[];
+extern pde_t                    g_page_directory[];
+extern pte_t                    g_page_table[];
 
 /* flush translation lookaside buffer (tlb) meaning that entry inside tlb cache,
  * (store pte) will be flushed so not saved. This avoid filling,
@@ -10,7 +11,8 @@ extern page_table_entry_t     g_page_table[];
  *
  * @vaddr: Virtual Address
  * */
-static __always_inline void   flush_tlb(uint32_t vaddr)
+/*
+static __always_inline void flush_tlb(uint32_t vaddr)
 {
     asm volatile("invlpg (%0)" ::"r"(vaddr)
                  : "memory");
@@ -38,6 +40,7 @@ static __always_inline void set_cr0(uint32_t value)
                  : "r"(value)
                  : "eax");
 }
+*/
 
 static __always_inline uint32_t get_address_value(void *phys)
 {
@@ -67,7 +70,7 @@ int get_free_page_directory()
     return -1;
 }
 
-uint32_t *get_virtual_address(void)
+void *get_memory_page(page_frame_t frame)
 {
     int pdindex = get_free_page_directory();
     if (pdindex == -1) return NULL;
@@ -97,7 +100,8 @@ uint32_t *get_virtual_address(void)
 
     // virtual address is ready
     // and now it need to map page frame (physical addr page)
-    return (uint32_t *)vaddr;
+    g_page_table[ptindex].address = (uint32_t)frame;
+    return (void *)vaddr;
 }
 
 page_table_entry_t *get_page_table_entry(void *vaddr)
@@ -112,61 +116,13 @@ page_directory_entry_t *get_page_directory_entry(void *vaddr)
     return &g_page_directory[pde_index];
 }
 
-/*
-void setup_identity_paging(void)
-{
-    memset(g_page_directory, 0, sizeof(g_page_directory));
-    memset(g_page_table, 0, sizeof(g_page_table));
-
-    // Temp identity mapping for the kernel code
-    g_page_directory[0].present = 1;
-    g_page_directory[0].read_write = 1;
-    g_page_directory[0].address = get_address_value(g_page_table);
-
-    // Identity mapping for higher half kernel.
-    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].present = 1;
-    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].read_write = 1;
-    g_page_directory[KERNEL_PAGE_DIRECTORY_INDEX].address
-        = get_address_value(g_page_table);
-    for (uint32_t i = 0; i < 1024; i++) {
-        g_page_table[i].present = 1;
-        g_page_table[i].read_write = 1;
-        g_page_table[i].address = i;
-    }
-}
-
-void enable_paging(void)
-{
-    set_cr3((uintptr_t)g_page_directory);
-    set_cr0(1 << 31);
-}
-*/
-
-/*
-void remove_identity_mapping(void)
-{
-    // remove identity mapping
-    g_page_directory[0] = (page_directory_entry_t){ 0 };
-
-    // implicit flush of the tlb.
-    asm volatile("mov %%cr3, %%eax; mov %%eax, %%cr3" ::
-                     : "eax");
-}
-*/
-
 void init_paging(uint32_t mem_in_mib)
 {
     uint32_t max_mem = 0x100000 * (mem_in_mib - 1);
 
     printk("Memory available: %uMiB, in byte: %uB\n", mem_in_mib, max_mem);
-    printk("start identity paging\n");
-    // init_frame_page(max_mem);
-    setup_identity_paging();
-    printk("finished identity paging\n");
-
-    // Give physical address of page directory entry array.
-    set_cr3((uintptr_t)g_page_directory);
-
-    // Set paging bit on
-    set_cr0(1 << 31);
+    init_frame_page(max_mem);
+    page_frame_t frame = kalloc_frame();
+    void        *vaddr = get_memory_page(frame);
+    printk("frame: %p, vaddr: %p\n", frame, vaddr);
 }

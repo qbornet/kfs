@@ -1,3 +1,5 @@
+#include "multiboot2.h"
+#include <lib/io.h>
 #include <multiboot2_info.h>
 
 /*
@@ -12,22 +14,34 @@
 uint32_t get_memory_max_value(uint32_t mbi)
 {
     struct multiboot_tag *tag;
-    uint32_t              total_mem;
+    uint32_t              total_mem = 0;
+    printk("Announced mbi size 0x%x\n", *(unsigned *)mbi);
     for (tag = (struct multiboot_tag *)(mbi + 8);
          tag->type != MULTIBOOT_TAG_TYPE_END;
          tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag
                                         + ((tag->size + 7) & ~7))) {
         switch (tag->type) {
-            case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
+            case MULTIBOOT_TAG_TYPE_MMAP:
                 {
-                    total_mem
-                        = ((struct multiboot_tag_basic_meminfo *)tag)->mem_lower
-                        + ((struct multiboot_tag_basic_meminfo *)tag)
-                              ->mem_upper;
+                    multiboot_memory_map_t *mmap;
+                    for (mmap = ((struct multiboot_tag_mmap *)tag)->entries;
+                         (multiboot_uint8_t *)mmap
+                         < (multiboot_uint8_t *)tag + tag->size;
+                         mmap = (multiboot_memory_map_t
+                                     *)((unsigned long)mmap
+                                        + ((struct multiboot_tag_mmap *)tag)
+                                              ->entry_size)) {
+                        // Available RAM
+                        if (mmap->type == 1) {
+                            total_mem += (unsigned)(mmap->len >> 32)
+                                       + (unsigned)(mmap->len & 0xffffffff);
+                        }
+                    }
                     break;
                 }
             default: break;
         }
     }
-    return total_mem / 1049;
+    printk("finished finding total memory: %uB\n", total_mem);
+    return (total_mem / 1E6);
 }

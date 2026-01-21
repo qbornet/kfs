@@ -118,7 +118,7 @@ setup_identity_paging:
     mov [g_page_directory + 768 * 4], eax
 
     ; Map 0xB8000 (VGA MEMORY) to last page 0xC03FF0000
-    mov eax, 0xB8000        ; Physical address of buffer 0xB8000
+    mov eax, 0xB8000         ; Physical address of buffer 0xB8000
     or eax, 0x003            ; Present, R/W
 
     mov [g_page_table_kernel + 1023 * 4], eax
@@ -179,7 +179,6 @@ global remove_identity_mapping
 remove_identity_mapping:
     ; g_page_directory address is physical,
     ; We need to get the offset of the g_page_directory because we use virtual address now.
-    
     mov eax, g_page_directory      ; Load physical address
     sub eax, 0x100000              ; Remove physical base
     add eax, 0xC0000000            ; Add virtual base
@@ -196,14 +195,15 @@ remove_identity_mapping:
 higher_half:
     ; Fix stack pointer to higher half
     mov eax, stack_top
+
     ; (Optional: if stack symbols are in .bss, they are already virtual in the new linker script
     ;  so simpler: mov esp, stack_top is fine if stack_top is in a higher-half section)
-    mov esp, eax 
 
+    mov esp, eax 
     call remove_identity_mapping
 
-    push dword [g_saved_mbi_addr]
-    push 0x36d76289
+    extern g_boot_info_ptr
+    push dword [g_boot_info_ptr]
     call kernel_main
 
     cli

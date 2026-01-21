@@ -1,6 +1,6 @@
 #ifndef PAGING_H
 #define PAGING_H
-// #include "phys_alloc.h"
+
 #include <lib/io.h>
 #include <lib/mem.h>
 #include <lib/shared/defs.h>
@@ -43,7 +43,7 @@ typedef struct s_page_directory_entry {
     uint8_t  page_size : 1;
     uint8_t  ignored1 : 4;
     uint32_t address : 20;
-} __attribute__((packed)) page_directory_entry_t;
+} __attribute__((packed)) page_directory_entry_t, pde_t;
 
 /*
  * Page table entry use to define rights and point to page
@@ -60,7 +60,7 @@ typedef struct s_page_table_entry {
     uint8_t  global : 1;
     uint8_t  ignored : 3;
     uint32_t address : 20;
-} __attribute__((packed)) page_table_entry_t;
+} __attribute__((packed)) page_table_entry_t, pte_t;
 
 // Init paging
 void                      init_paging(uint32_t mem_in_mib);
@@ -68,12 +68,5 @@ uint32_t                 *get_virtual_address(void);
 void                      setup_identity_paging(void);
 void                      enable_paging(void);
 void                      remove_identity_mapping(void);
-
-/*
- * page directory & table global variable
- * */
-// page_directory_entry_t    g_page_directory[1024]
-// __attribute__((aligned(4096))); page_table_entry_t        g_page_table[1024]
-// __attribute__((aligned(4096)));
 
 #endif

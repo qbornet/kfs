@@ -1,5 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
+#include <boot/kernel_early.h>
+#include <boot/parser_mutliboot.h>
 #include <gdt.h>
 #include <lib/cpl.h>
 #include <lib/io.h>

@@ -9,19 +9,24 @@
 typedef uint32_t *page_frame_t;
 
 /*
- * Find the first physical address FREE available, return the address.
+ * Return the first preallocated available page_frame
+ * allocate preallocated 20 pages if none is available this will allow us,
+ * to have faster page availables without the need to check everytimes if pages,
+ * are available.
  *
  * @ret page_frame_t (typedef uint32_t *)
  * */
-page_frame_t      phys_alloc(void);
+page_frame_t      kalloc_frame(void);
 
 /*
- * Initialize the page frame end for the max memory available in the system.
+ * Free physical page frame given this doesn't zero set the page frame only set
+ * the tracker to FREE, only the first 4 byte are written.
  *
- * @max_mem: Max memory in byte, present in the system (physical memory).
+ * @frame: Page frame that you want to free
  * */
-void              init_frame_page(uint32_t max_mem);
+void              kfree_frame(page_frame_t);
 
+// void           init_frame_page(uint32_t max_mem);
+void              init_frame_page(uint32_t max_mem);
 extern uint32_t   g_kernel_end;
-page_frame_t      g_end_frame_map;
 #endif

@@ -20,8 +20,6 @@ SECTIONS
         *(.multiboot)
         *(.boot)
     }
-
-    /* Save the physical end of the boot code */
     _boot_end_phys = .;
 
     /* --- Higher Half Sections --- */
@@ -78,10 +76,10 @@ SECTIONS
         *(COMMON)
         *(.bss)
         *(.bss.*)
+        g_kernel_end = .;
     }
 
     /* Mark the end of the kernel */
-    g_kernel_end = .;
 
     /DISCARD/ : { *(.comment) *(.note*) }
 }
