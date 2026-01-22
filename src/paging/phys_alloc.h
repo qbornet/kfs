@@ -2,8 +2,9 @@
 #define PHYS_ALLOC_H
 #define FRAME_SIZE           4096
 #define BITMAP_SIZE(max_mem) (max_mem / FRAME_SIZE / 8)
-#define FREE                 0x00000000
-#define USED                 0x32323232
+#define FREE                 0
+#define USED                 1
+#include <lib/io.h>
 #include <stddef.h>
 #include <stdint.h>
 typedef uint32_t *page_frame_t;
@@ -26,7 +27,5 @@ page_frame_t      kalloc_frame(void);
  * */
 void              kfree_frame(page_frame_t);
 
-// void           init_frame_page(uint32_t max_mem);
-void              init_frame_page(uint32_t max_mem);
-extern uint32_t   g_kernel_end;
+void              init_frame_page(uint32_t base_addrs, uint32_t size);
 #endif

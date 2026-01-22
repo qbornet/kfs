@@ -72,10 +72,19 @@ static __always_inline void print_dec(long nbr, int *ret)
 
 static __always_inline void putnbr_pointer(unsigned long long nbr, int *ret)
 {
+    uint8_t write_non_zero = 0;
     for (int shift = 28; shift >= 0; shift -= 4) {
         uint8_t nibble = (nbr >> shift) & 0xF;
-        serial_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
-        terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
+        if (nibble == 0 && write_non_zero >= 1) {
+            serial_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
+            terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
+        } else if (nibble == 0 && write_non_zero == 0) {
+            continue;
+        } else if (nibble != 0) {
+            write_non_zero++;
+            serial_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
+            terminal_putchar(nibble < 10 ? '0' + nibble : 'a' + nibble - 10);
+        }
         *ret += 1;
     }
 }

@@ -22,6 +22,12 @@
 #define PTE_INDEX(addr)             ((addr >> 12) & 0x3FF)
 #define PDE_INDEX(addr)             ((addr >> 22) & 0x3FF)
 
+#define VIRTUAL_BASE                0xC0000000
+#define KERNEL_MAP_SIZE             0x00400000
+#define KERNEL_OFFSET               0xBFF00000
+#define V2P(a)                      ((void *)((uint32_t)(a) & ~KERNEL_OFFSET))
+#define P2V(a)                      ((void *)((uint32_t)(a) + KERNEL_OFFSET))
+
 // Kernel maping start at 768 in page directory end at 1024
 #define KERNEL_PAGE_DIRECTORY_INDEX 768
 
@@ -63,10 +69,13 @@ typedef struct s_page_table_entry {
 } __attribute__((packed)) page_table_entry_t, pte_t;
 
 // Init paging
-void                      init_paging(uint32_t mem_in_mib);
+void                      init_paging(uint32_t base_addrs, uint32_t size);
 uint32_t                 *get_virtual_address(void);
 void                      setup_identity_paging(void);
 void                      enable_paging(void);
 void                      remove_identity_mapping(void);
 
+extern uint32_t           g_page_directory[];
+extern uint32_t           g_page_table[];
+extern uint32_t           g_kernel_end;
 #endif

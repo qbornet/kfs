@@ -1,20 +1,24 @@
 #include <paging/phys_alloc.h>
-page_frame_t g_end_frame_map;
+static uint8_t  g_phys_bitmap[4096];
+static uint32_t g_start_phys_mem;
+static uint32_t g_pre_frames[20];
+page_frame_t    g_end_frame_map;
 
 /*
  * Find the first physical address FREE available, return the address.
  *
  * @ret page_frame_t (typedef uint32_t *)
  * */
-page_frame_t phys_alloc(void)
+page_frame_t    phys_alloc(void)
 {
-    uint32_t     i = 0;
-    page_frame_t frame_map = &g_kernel_end;
-    while ((frame_map + i) != g_end_frame_map && frame_map[i] != FREE) {
+    uint32_t i = 0;
+    while (i < FRAME_SIZE && g_phys_bitmap[i] != FREE) {
         i++;
     }
-    frame_map[i] = USED;
-    return (page_frame_t)(g_kernel_end + (i * FRAME_SIZE));
+    g_phys_bitmap[i] = USED;
+    page_frame_t ret = (page_frame_t)(g_start_phys_mem + (i * FRAME_SIZE));
+    printk("ret: %p\n", ret);
+    return ret;
 }
 
 /*
@@ -27,22 +31,22 @@ page_frame_t phys_alloc(void)
  * */
 page_frame_t kalloc_frame()
 {
-    static uint8_t      allocate = 1;
-    static uint8_t      pframe = 0;
-    static page_frame_t pre_frames[20];
-    page_frame_t        ret;
+    static uint8_t allocate = 1;
+    static uint8_t pframe = 0;
 
     if (pframe == 20) allocate = 1;
 
     if (allocate == 1) {
+        printk("allocate is on\n");
         for (int i = 0; i < 20; i++) {
-            pre_frames[i] = phys_alloc();
+            printk("[%d]\n", i);
+            g_pre_frames[i] = (uint32_t)phys_alloc();
+            printk("pre_frames[%d]: %x\n", i, g_pre_frames[i]);
         }
         pframe = 0;
         allocate = 0;
     }
-    ret = pre_frames[pframe++];
-    return ret;
+    return (page_frame_t)g_pre_frames[pframe++];
 }
 
 /*
@@ -54,7 +58,7 @@ page_frame_t kalloc_frame()
 void kfree_frame(page_frame_t frame)
 {
     // give us the offset of the "frame_map" (g_kernel_end);
-    page_frame_t frame_map = &g_kernel_end;
+    page_frame_t frame_map = (page_frame_t)g_start_phys_mem;
     frame = (page_frame_t)(frame - frame_map);
     if (frame == 0) {
         uint32_t index = (uint32_t)frame;
@@ -70,8 +74,12 @@ void kfree_frame(page_frame_t frame)
  *
  * @max_mem: Max memory in byte, present in the system (physical memory).
  * */
-void init_frame_page(uint32_t max_mem)
+void init_frame_page(uint32_t base_addrs, uint32_t size)
 {
-    // give the max size of the physical address available. (max memory)
-    g_end_frame_map = &g_kernel_end + max_mem;
+    g_start_phys_mem = base_addrs;
+    g_end_frame_map = (page_frame_t)(base_addrs + size);
+    printk("g_start_phys_mem: 0x%x, g_end_frame_map: %p, cast: %p\n",
+           g_start_phys_mem,
+           g_end_frame_map,
+           (page_frame_t)g_start_phys_mem);
 }

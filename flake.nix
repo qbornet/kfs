@@ -36,6 +36,7 @@
 
                 # debug tools
                 gdb
+                socat
             ];
             buildInputs = [];
 

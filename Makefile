@@ -89,6 +89,13 @@ run: $(ISO_FILE)
 run-terminal: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio
 
+run-tlb-mode: $(ISO_FILE)
+	qemu-system-i386 -cdrom $(ISO_FILE) -serial mon:stdio -monitor unix:/tmp/qemu-monitor.sock,server,nowait
+
+fetch-tlb:
+	echo "info tlb" | socat - UNIX-CONNECT:/tmp/qemu-monitor.sock > tlb.dump
+
+
 debug: $(ISO_FILE) $(SYM_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -nographic -serial mon:stdio -s -S -display curses
 
