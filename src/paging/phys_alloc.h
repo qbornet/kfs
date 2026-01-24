@@ -1,9 +1,10 @@
 #ifndef PHYS_ALLOC_H
 #define PHYS_ALLOC_H
-#define FRAME_SIZE           4096
-#define BITMAP_SIZE(max_mem) (max_mem / FRAME_SIZE / 8)
-#define FREE                 0
-#define USED                 1
+#define MAX_PAGES   (1024 * 1024)
+#define FRAME_SIZE  4096
+#define BITMAP_SIZE 32768
+#define FREE        0x0
+#define USED        0xFFFFFFFF
 #include <lib/io.h>
 #include <stddef.h>
 #include <stdint.h>

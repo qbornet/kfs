@@ -19,6 +19,8 @@ void kernel_main(boot_info_t *boot_info)
     printk("Kernel Loaded. RAM Detecded: %u MiB / %u B\n",
            boot_info->max_memory / 1024 / 1024,
            boot_info->max_memory);
+    extern uint32_t g_kernel_end;
+    printk("end address of kernel: 0x%x\n", g_kernel_end);
 
     uint8_t  to_save = 0;
     uint32_t size = 0;
@@ -42,11 +44,10 @@ void kernel_main(boot_info_t *boot_info)
         }
     }
     uint32_t base_addrs = boot_info->mmap_info[to_save].base_high
-                        + boot_info->mmap_info[to_save].base_low + 0x400000;
-    size -= 0x7c000; // Already map kernel mem.
+                        + boot_info->mmap_info[to_save].base_low;
     printk("base_addrs: 0x%x, highest_size: 0x%x\n", base_addrs, highest_size);
+    init_paging(base_addrs, highest_size);
     while (1) {
         asm volatile("hlt");
     }
-    init_paging(base_addrs, size);
 }

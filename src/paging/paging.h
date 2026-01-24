@@ -19,14 +19,15 @@
 #define PF_USER_ON                  1
 #define PF_USER_OFF                 0
 
-#define PTE_INDEX(addr)             ((addr >> 12) & 0x3FF)
-#define PDE_INDEX(addr)             ((addr >> 22) & 0x3FF)
+#define PTE_INDEX(addr)             (((uint32_t)addr >> 12) & 0x3FF)
+#define PDE_INDEX(addr)             (((uint32_t)addr >> 22) & 0x3FF)
 
 #define VIRTUAL_BASE                0xC0000000
+#define TMP_PAGE_ADDR               0xC03FF000
 #define KERNEL_MAP_SIZE             0x00400000
 #define KERNEL_OFFSET               0xBFF00000
-#define V2P(a)                      ((void *)((uint32_t)(a) & ~KERNEL_OFFSET))
-#define P2V(a)                      ((void *)((uint32_t)(a) + KERNEL_OFFSET))
+#define V2P(a)                      (((uint32_t)(a) - KERNEL_OFFSET))
+#define P2V(a)                      (((uint32_t)(a) + KERNEL_OFFSET))
 
 // Kernel maping start at 768 in page directory end at 1024
 #define KERNEL_PAGE_DIRECTORY_INDEX 768
@@ -40,14 +41,12 @@
  * */
 typedef struct s_page_directory_entry {
     uint8_t  present : 1;
-    uint8_t  read_write : 1;
-    uint8_t  user_supervisor : 1;
-    uint8_t  write_through : 1;
+    uint8_t  rw : 1;
+    uint8_t  user : 1;
+    uint8_t  pwt : 1;
     uint8_t  cache_disable : 1;
     uint8_t  accessed : 1;
-    uint8_t  ignored0 : 1;
-    uint8_t  page_size : 1;
-    uint8_t  ignored1 : 4;
+    uint16_t ignored : 6;
     uint32_t address : 20;
 } __attribute__((packed)) page_directory_entry_t, pde_t;
 
@@ -56,15 +55,13 @@ typedef struct s_page_directory_entry {
  * */
 typedef struct s_page_table_entry {
     uint8_t  present : 1;
-    uint8_t  read_write : 1;
-    uint8_t  user_supervisor : 1;
-    uint8_t  write_through : 1;
+    uint8_t  rw : 1;
+    uint8_t  user : 1;
+    uint8_t  pwt : 1;
     uint8_t  cache_disable : 1;
     uint8_t  accessed : 1;
     uint8_t  dirty : 1;
-    uint8_t  page_attribute : 1;
-    uint8_t  global : 1;
-    uint8_t  ignored : 3;
+    uint16_t ignored : 5;
     uint32_t address : 20;
 } __attribute__((packed)) page_table_entry_t, pte_t;
 
@@ -76,6 +73,5 @@ void                      enable_paging(void);
 void                      remove_identity_mapping(void);
 
 extern uint32_t           g_page_directory[];
-extern uint32_t           g_page_table[];
 extern uint32_t           g_kernel_end;
 #endif

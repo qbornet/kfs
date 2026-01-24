@@ -1,85 +1,97 @@
 #include <paging/phys_alloc.h>
-static uint8_t  g_phys_bitmap[4096];
+static uint32_t g_phys_bitmap[BITMAP_SIZE];
 static uint32_t g_start_phys_mem;
 static uint32_t g_pre_frames[20];
+static uint32_t g_total_pages;
 page_frame_t    g_end_frame_map;
 
-/*
- * Find the first physical address FREE available, return the address.
- *
- * @ret page_frame_t (typedef uint32_t *)
- * */
-page_frame_t    phys_alloc(void)
+// Set bitmap a map is used
+static void     bitmap_set(uint32_t bit)
 {
-    uint32_t i = 0;
-    while (i < FRAME_SIZE && g_phys_bitmap[i] != FREE) {
-        i++;
-    }
-    g_phys_bitmap[i] = USED;
-    page_frame_t ret = (page_frame_t)(g_start_phys_mem + (i * FRAME_SIZE));
-    printk("ret: %p\n", ret);
-    return ret;
+    g_phys_bitmap[bit / 32] |= (1 << (bit % 32));
 }
 
-/*
- * Return the first preallocated available page_frame
- * allocate preallocated 20 pages if none is available this will allow us,
- * to have faster page availables without the need to check everytimes if pages,
- * are available.
- *
- * @ret page_frame_t (typedef uint32_t *)
- * */
+// Unset bitmap a map is free
+static void bitmap_unset(uint32_t bit)
+{
+    g_phys_bitmap[bit / 32] &= ~(1 << (bit % 32));
+}
+
+// Test bitmap a map is used or free; (0) free (1) used
+static int bitmap_test(uint32_t bit)
+{
+    return g_phys_bitmap[bit / 32] & (1 << (bit % 32));
+}
+
+static page_frame_t phys_alloc(void)
+{
+    for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
+        if (g_phys_bitmap[i] == 0xFFFFFFFF) continue;
+
+        for (int j = 0; j < 32; j++) {
+            if (!bitmap_test(i * 32 + j)) {
+                uint32_t frame_idx = (i * 32) + j;
+                if (frame_idx >= g_total_pages) return 0;
+
+                bitmap_set(frame_idx);
+                return (page_frame_t)(g_start_phys_mem
+                                      + (frame_idx * FRAME_SIZE));
+            }
+        }
+    }
+    return 0;
+}
+
+void kfree_frame(page_frame_t frame)
+{
+    uint32_t addr = (uint32_t)frame;
+    printk("address to free from phys allocator: 0x%x\n", addr);
+    if (addr < g_start_phys_mem) return;
+
+    uint32_t frame_idx = (addr - g_start_phys_mem) / FRAME_SIZE;
+    if (frame_idx >= g_total_pages) return;
+    bitmap_unset(frame_idx);
+}
+
 page_frame_t kalloc_frame()
 {
     static uint8_t allocate = 1;
     static uint8_t pframe = 0;
 
-    if (pframe == 20) allocate = 1;
+    if (pframe == 20) {
+        allocate = 1;
+        pframe = 0;
+    }
 
     if (allocate == 1) {
-        printk("allocate is on\n");
         for (int i = 0; i < 20; i++) {
-            printk("[%d]\n", i);
             g_pre_frames[i] = (uint32_t)phys_alloc();
-            printk("pre_frames[%d]: %x\n", i, g_pre_frames[i]);
         }
-        pframe = 0;
         allocate = 0;
     }
     return (page_frame_t)g_pre_frames[pframe++];
 }
 
-/*
- * Free physical page frame given this doesn't zero set the page frame only set
- * the tracker to FREE, only the first 4 byte are written.
- *
- * @frame: Page frame that you want to free
- * */
-void kfree_frame(page_frame_t frame)
-{
-    // give us the offset of the "frame_map" (g_kernel_end);
-    page_frame_t frame_map = (page_frame_t)g_start_phys_mem;
-    frame = (page_frame_t)(frame - frame_map);
-    if (frame == 0) {
-        uint32_t index = (uint32_t)frame;
-        frame_map[index] = FREE;
-    } else {
-        uint32_t index = ((uint32_t)frame / FRAME_SIZE);
-        frame_map[index] = FREE;
-    }
-}
-
-/*
- * Initialize the page frame end for the max memory available in the system.
- *
- * @max_mem: Max memory in byte, present in the system (physical memory).
- * */
 void init_frame_page(uint32_t base_addrs, uint32_t size)
 {
     g_start_phys_mem = base_addrs;
-    g_end_frame_map = (page_frame_t)(base_addrs + size);
-    printk("g_start_phys_mem: 0x%x, g_end_frame_map: %p, cast: %p\n",
-           g_start_phys_mem,
-           g_end_frame_map,
-           (page_frame_t)g_start_phys_mem);
+
+    g_total_pages = size / FRAME_SIZE;
+
+    if (g_total_pages > (BITMAP_SIZE * 32)) {
+        g_total_pages = BITMAP_SIZE * 32;
+        printk("Warning: Truncated memory we dont handle higher then %dMiB\n",
+               MAX_PAGES);
+    }
+
+    for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
+        g_phys_bitmap[i] = FREE;
+    }
+    // The first 32 integer is equivalent to 4MiB which is already allocated.
+    for (uint32_t i = 0; i < 32; i++) {
+        g_phys_bitmap[i] = USED;
+    }
+    printk("Physical allocator: Manage %d pages starting at 0x%x\n",
+           g_total_pages,
+           g_start_phys_mem);
 }

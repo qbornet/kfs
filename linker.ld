@@ -61,6 +61,7 @@ SECTIONS
         *(.plt*)
     }
 
+    /*
     . = ALIGN(4K);
     _vma_eh_frame = .;
     .eh_frame : AT(_vma_eh_frame - KERNEL_OFFSET)
@@ -68,6 +69,7 @@ SECTIONS
         *(.eh_frame)
         *(.eh_frame.*)
     }
+    */
 
     . = ALIGN(4K);
     _vma_bss = .;
@@ -76,10 +78,10 @@ SECTIONS
         *(COMMON)
         *(.bss)
         *(.bss.*)
-        g_kernel_end = .;
     }
+    g_kernel_end = .;
 
     /* Mark the end of the kernel */
 
-    /DISCARD/ : { *(.comment) *(.note*) }
+    /DISCARD/ : { *(.eh_frame) *(.comment) *(.note*) }
 }

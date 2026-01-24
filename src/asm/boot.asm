@@ -112,16 +112,16 @@ setup_identity_paging:
     or eax, 0x003           ; Present, R/W
     mov [g_page_directory], eax
 
-    ; Install KERNEL page table at PD[768]
-    mov eax, g_page_table_kernel    ; Use g_page_table_kernel, not g_page_table!
-    or eax, 0x003                   ; Present, R/W
-    mov [g_page_directory + 768 * 4], eax
-
     ; Map 0xB8000 (VGA MEMORY) to last page 0xC03FF0000
     mov eax, 0xB8000         ; Physical address of buffer 0xB8000
     or eax, 0x003            ; Present, R/W
 
     mov [g_page_table_kernel + 1023 * 4], eax
+
+    ; Install KERNEL page table at PD[768]
+    mov eax, g_page_table_kernel    ; Use g_page_table_kernel, not g_page_table!
+    or eax, 0x003                   ; Present, R/W
+    mov [g_page_directory + 768 * 4], eax
 
     pop edx
     pop ecx

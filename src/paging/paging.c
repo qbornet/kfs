@@ -1,7 +1,10 @@
 #include <paging/paging.h>
 #include <paging/phys_alloc.h>
-uint8_t                     g_current_page_table = 0;
-static pte_t                g_page_table_kernel_space[1024];
+
+typedef union {
+    pde_t    directory;
+    uint32_t representation;
+} debug_t;
 
 /* flush translation lookaside buffer (tlb) meaning that entry inside tlb cache,
  * (store pte) will be flushed so not saved. This avoid filling,
@@ -11,7 +14,8 @@ static pte_t                g_page_table_kernel_space[1024];
  *
  * @vaddr: Virtual Address
  * */
-static __always_inline void flush_tlb(uint32_t vaddr)
+__attribute__((aligned(4096))) static uint32_t g_page_table_kernel_space[1024];
+static __always_inline void                    flush_tlb(uint32_t vaddr)
 {
     asm volatile("invlpg (%0)" ::"r"(vaddr)
                  : "memory");
@@ -29,91 +33,73 @@ static __always_inline void set_cr3(uint32_t page_directory)
 
 static __always_inline uint32_t get_address_value(void *phys)
 {
+    printk(
+        "all phys value: %p, shifted 12: 0x%x\n", phys, (uint32_t)phys >> 12);
     return (uint32_t)phys >> 12;
 }
 
-static __always_inline uint8_t is_directory_full(uint16_t pdindex)
+// destroy a page table based on the vaddr that you provide.
+// the vaddr need to be in the range of the page table to be destroy.
+void destroy_memory_page(void *vaddr)
 {
+    uint32_t pdindex = PDE_INDEX(vaddr);
+    uint32_t ptindex = PTE_INDEX(vaddr);
+    printk("pdindex: %d, ptindex: %d\n", pdindex, ptindex);
+    printk("setting pde\n");
     pde_t *v_pde = (pde_t *)P2V(g_page_directory);
-    if (v_pde[pdindex].present == 0) return 0;
-    pte_t *v_pte = (pte_t *)((uint32_t)v_pde[pdindex].address);
+    if(v_pde[pdindex].present == 0)
+        return; // Error no page directory entry index found;
 
-    for (uint16_t i = 0; i < 1024; i++) {
-        if (v_pte[i].present == 0) return 0;
-    }
-    return 1;
-}
+    printk("setting pte\n");
+    pte_t *v_pte = (pte_t *)P2V((uint32_t)(v_pde[pdindex].address << 12));
+    if(v_pte[ptindex].present == 0)
+        return; // Error no page table entry index found;
 
-// destroy a page table based on the index that you provide.
-void destroy_page_table(uint16_t pdindex, uint16_t ptindex)
-{
-    uint32_t vaddr = pdindex << 22 | ptindex << 12;
-    pte_t    page_table_entry = g_page_table_kernel_space[ptindex];
-
-    if (page_table_entry.present != 1) return; // Error: not in memory
+    printk("setting vaddr to 0\n");
     memset((void *)vaddr, 0, FRAME_SIZE);
-    flush_tlb(vaddr);
-    kfree_frame((page_frame_t)((uint32_t)page_table_entry.address));
-    memset(&page_table_entry, 0, sizeof(pte_t));
-}
-
-// will get a page clean page table based on the index that you provide.
-pte_t *get_page_table(uint16_t ptindex)
-{
-    printk("g_page_table_kernel_space: %p\n", g_page_table_kernel_space);
-    pte_t page_table_entry = g_page_table_kernel_space[ptindex];
-    if (page_table_entry.present == 1) return NULL;
-    printk("page_table_entry found: %p\n", &g_page_table_kernel_space[ptindex]);
-    return &g_page_table_kernel_space[ptindex];
-}
-
-int get_free_page_directory()
-{
-    pde_t *v_pde = (pde_t *)P2V(g_page_directory);
-    for (uint32_t i = 0; i < 1024; i++) {
-        // give page directory entry for only not present in memory and not
-        // accessed (dirty) entry or only not accessed page directory entry.
-        if ((!v_pde[i].present && !v_pde[i].accessed) || !v_pde[i].accessed)
-            return i;
-    }
-    return -1;
+    flush_tlb((uint32_t)vaddr);
+    kfree_frame((page_frame_t)((uint32_t)v_pte[ptindex].address << 12));
+    v_pde[pdindex].address = 0;
+    memset(v_pte, 0, sizeof(pte_t));
 }
 
 void *get_memory_page(page_frame_t frame, uint32_t vaddr)
 {
-    // Get index from virtual address that you want to map.
-    uint16_t pdindex = (uint16_t)vaddr >> 22;
-    uint16_t ptindex = (uint16_t)vaddr >> 12 & 0x3FF;
-    if (is_directory_full(pdindex)) {
-        printk("error is full\n");
-        // Error: directory index passed as full page_table already.
+    printk("frame passed: %p\n", frame);
+    uint32_t ptindex = PTE_INDEX(vaddr);
+    uint32_t pdindex = PDE_INDEX(vaddr);
+    printk("ptindex: %u, pdindex: %u\n", ptindex, pdindex);
+    // Get the g_page_directory
+    pde_t  *v_pde = (pde_t *)P2V(g_page_directory);
+    debug_t v_pde_0 = { .directory = v_pde[0] };
+    debug_t v_pde_768 = { .directory = v_pde[768] };
+    debug_t v_pde_769 = { .directory = v_pde[769] };
+    printk("v_pde: %p\nvalue hold at 0: 0x%x, at 768: 0x%x, at 769: 0x%x\n",
+           v_pde,
+           v_pde_0.representation,
+           v_pde_768.representation,
+           v_pde_769.representation);
+
+    pte_t *v_pte = (pte_t *)((uint32_t)&g_page_table_kernel_space);
+    if(v_pte[ptindex].present == 0) {
+        v_pte[ptindex].rw = 1;
+        v_pte[ptindex].address = get_address_value(frame);
+        v_pte[ptindex].present = 1;
+    } else {
+        printk("Already mapped skipping...\n");
         return NULL;
     }
 
-    // Get the phyiscal address to virtual so we can modify pde and pte.
-    pde_t *v_pde = (pde_t *)P2V(g_page_directory);
-    pte_t *v_pte = get_page_table(ptindex);
-    if (v_pte == NULL) {
-        printk("v_pte is null\n");
-        // Error: ptindex is already map.
-        return NULL;
-    }
-    printk("v_pde: %p, v_pte:  %p\n", v_pde, v_pte);
-
-    // Set read write access for both
-    v_pte[ptindex].read_write = 1;
-    v_pde[pdindex].read_write = 1;
-
-    // Set page_table physical address to page directory.
-    v_pde[pdindex].address = get_address_value((void *)&v_pte[ptindex]);
-
-    // Page_frame added to v_pte so now we have physical memory linked to the
-    // virtual one.
-    v_pte[ptindex].address = (uint32_t)frame;
-
-    // Set present to say that it's present in physical memory.
-    v_pte[ptindex].present = 1;
+    v_pde[pdindex].rw = 1;
+    v_pde[pdindex].address = get_address_value((void *)V2P(v_pte));
     v_pde[pdindex].present = 1;
+    v_pde_768.directory = v_pde[768];
+    v_pde_769.directory = v_pde[pdindex];
+    printk("v_pde: %p\nvalue hold at 0: 0x%x, at 768: 0x%x, at 769: 0x%x\n",
+           v_pde,
+           v_pde_0.representation,
+           v_pde_768.representation,
+           v_pde_769.representation);
     set_cr3((uint32_t)g_page_directory);
     return (void *)vaddr;
 }
@@ -140,8 +126,13 @@ void init_paging(uint32_t base_addrs, uint32_t size)
     page_frame_t frame = kalloc_frame();
     printk("frame_present: %p\n", frame);
     printk("get_memory_page()\n");
-    void *vaddr = get_memory_page(frame, VIRTUAL_BASE + KERNEL_MAP_SIZE);
-    printk("frame: %p, vaddr: %p\n", frame, vaddr);
-    // memcpy(vaddr, "toto", 4);
-    // printk("%p:[%s]\n", vaddr, (char *)vaddr);
+    void *vaddr = get_memory_page(frame, 0xc0400000);
+    if(vaddr) {
+        printk("frame: %p, vaddr: %p\n", frame, vaddr);
+        memcpy(vaddr, "toto", 4);
+        printk("%p:[%s]\n", vaddr, (char *)vaddr);
+        // destroy_memory_page(vaddr);
+    } else {
+        printk("Error when getting new page\n");
+    }
 }
