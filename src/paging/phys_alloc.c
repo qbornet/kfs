@@ -1,8 +1,9 @@
+#include <paging/pfn.h>
 #include <paging/phys_alloc.h>
 static uint32_t g_phys_bitmap[BITMAP_SIZE];
 static uint32_t g_start_phys_mem;
 static uint32_t g_pre_frames[20];
-static uint32_t g_total_pages;
+uint32_t        g_total_pages;
 page_frame_t    g_end_frame_map;
 
 // Set bitmap a map is used
@@ -42,10 +43,9 @@ static page_frame_t phys_alloc(void)
     return 0;
 }
 
-void kfree_frame(page_frame_t frame)
+static void pfree_frame(page_frame_t frame)
 {
     uint32_t addr = (uint32_t)frame;
-    printk("address to free from phys allocator: 0x%x\n", addr);
     if (addr < g_start_phys_mem) return;
 
     uint32_t frame_idx = (addr - g_start_phys_mem) / FRAME_SIZE;
@@ -53,7 +53,7 @@ void kfree_frame(page_frame_t frame)
     bitmap_unset(frame_idx);
 }
 
-page_frame_t kalloc_frame()
+static page_frame_t palloc_frame()
 {
     static uint8_t allocate = 1;
     static uint8_t pframe = 0;
@@ -70,6 +70,59 @@ page_frame_t kalloc_frame()
         allocate = 0;
     }
     return (page_frame_t)g_pre_frames[pframe++];
+}
+
+/* pmalloc return a physical pointer to a page that need to be free.
+ * (this will be a continuous block of memory)
+ *
+ * TODO: Will need to have a buddy allocator to avoid waste of memory.
+ *
+ * @size: Size of the variable that you want alloc.
+ * */
+void *pmalloc(uint32_t size)
+{
+    uint32_t i = 0;
+    void    *ret = palloc_frame();
+    while ((++i * FRAME_SIZE) < size) {
+        palloc_frame();
+    }
+    uint32_t index = ((uint32_t)ret - g_start_phys_mem) / FRAME_SIZE;
+    pfn_t   *page = &g_mem_map[index];
+    page->alloc_size = i;
+    page->flags |= PFN_FLAG_USED | PFN_FLAG_KERNEL;
+    return ret;
+}
+
+/* pfree free a block of pages the address provided should be returned by
+ * `pmalloc` (this will be a continuous block of memory)
+ *
+ * @phys_addr: Physical address return by `pmalloc`
+ * */
+void pfree(void *phys_addr)
+{
+    pfn_t *page = get_page_info((uint32_t)phys_addr);
+    if (!page) return;
+
+    if (page->flags & PFN_FLAG_USED) {
+        void *tmp;
+        for (uint32_t i = 0; i < page->alloc_size; i++) {
+            tmp = phys_addr + (i * FRAME_SIZE);
+            pfree_frame(tmp);
+        }
+        memset(page, 0, sizeof(pfn_t));
+    }
+}
+
+/* psize return the size allocated to the phys_addr passed in pages num (4KiB)
+ *
+ *
+ * @phys_addr: Physical address return by `pmalloc`
+ * */
+uint32_t psize(void *phys_addr)
+{
+    pfn_t *page = get_page_info((uint32_t)phys_addr);
+    if (!page) return -1;
+    return page->alloc_size;
 }
 
 void init_frame_page(uint32_t base_addrs, uint32_t size)
