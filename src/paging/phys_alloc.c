@@ -1,8 +1,8 @@
 #include <paging/pfn.h>
 #include <paging/phys_alloc.h>
 static uint32_t g_phys_bitmap[BITMAP_SIZE];
-static uint32_t g_start_phys_mem;
 static uint32_t g_pre_frames[20];
+uint32_t        g_start_phys_mem;
 uint32_t        g_total_pages;
 page_frame_t    g_end_frame_map;
 
@@ -86,10 +86,16 @@ void *pmalloc(uint32_t size)
     while ((++i * FRAME_SIZE) < size) {
         palloc_frame();
     }
+    printk("pmalloc frame:%p\n", ret);
     uint32_t index = ((uint32_t)ret - g_start_phys_mem) / FRAME_SIZE;
-    pfn_t   *page = &g_mem_map[index];
+    printk("pmalloc index: %d\n", index);
+    pfn_t *page = &g_mem_map[index];
+    printk("pmalloc page: %p\n", page);
     page->alloc_size = i;
     page->flags |= PFN_FLAG_USED | PFN_FLAG_KERNEL;
+    printk("pmalloc page->alloc_size: %d, page->flags: %d\n",
+           page->alloc_size,
+           page->flags);
     return ret;
 }
 

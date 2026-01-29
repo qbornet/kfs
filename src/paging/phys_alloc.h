@@ -15,4 +15,5 @@ void             *pmalloc(uint32_t size);
 void              pfree(void *phys_addr);
 void              init_frame_page(uint32_t base_addrs, uint32_t size);
 extern uint32_t   g_total_pages;
+extern uint32_t   g_start_phys_mem;
 #endif

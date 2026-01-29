@@ -1,4 +1,6 @@
+#include <lib/io.h>
 #include <paging/pfn.h>
+#include <paging/phys_alloc.h>
 
 extern uint32_t g_kernel_end;
 extern uint32_t g_total_pages;
@@ -19,7 +21,7 @@ void            init_pfn_db(uint32_t total_ram_size)
 
 pfn_t *get_page_info(uint32_t phys_addr)
 {
-    uint32_t pfn_index = phys_addr >> PAGE_SHIFT;
+    uint32_t pfn_index = ((phys_addr - g_start_phys_mem) >> PAGE_SHIFT);
     if (pfn_index >= g_total_pages) return NULL;
     return &g_mem_map[pfn_index];
 }

@@ -4,6 +4,7 @@
 #include <lib/io.h>
 #include <lib/mem.h>
 #include <lib/shared/defs.h>
+#include <paging/phys_alloc.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -23,7 +24,8 @@
 #define PDE_INDEX(addr)             (((uint32_t)addr >> 22) & 0x3FF)
 
 #define VIRTUAL_BASE                0xC0000000
-#define TMP_PAGE_ADDR               0xC03FF000
+#define KERNEL_START_VIRT_MEM       0xC0400000
+#define USER_START_VIRT_MEM         0x00400000
 #define KERNEL_MAP_SIZE             0x00400000
 #define KERNEL_OFFSET               0xBFF00000
 #define V2P(a)                      (((uint32_t)(a) - KERNEL_OFFSET))
@@ -33,7 +35,7 @@
 #define KERNEL_PAGE_DIRECTORY_INDEX 768
 
 // User maping start at 0 in page directory end at 768 (Kernel space)
-#define USER_PAGE_DIRECTORY_INDEX   0
+#define USER_PAGE_DIRECTORY_INDEX   1
 
 /*
  * Page directory entry point to page table entry and define page table entry
@@ -66,12 +68,14 @@ typedef struct s_page_table_entry {
 } __attribute__((packed)) page_table_entry_t, pte_t;
 
 // Init paging
+void                      destroy_memory_page(void *vaddr);
+void                     *get_memory_page(page_frame_t frame, uint32_t vaddr);
 void                      init_paging(uint32_t base_addrs, uint32_t size);
-uint32_t                 *get_virtual_address(void);
-void                      setup_identity_paging(void);
-void                      enable_paging(void);
-void                      remove_identity_mapping(void);
 
+extern uint32_t           g_page_table_kernel_space[];
+extern uint32_t           g_page_table_user_space[];
 extern uint32_t           g_page_directory[];
 extern uint32_t           g_kernel_end;
+extern uint32_t           g_kernel_start_virt_mem;
+extern uint32_t           g_user_start_virt_mem;
 #endif
