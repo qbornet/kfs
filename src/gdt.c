@@ -1,4 +1,5 @@
 #include <gdt.h>
+#include <paging/test_paging.h>
 
 sd_t               g_sdes[16];
 cpu_state_t        g_cpu_state; // In the future should be an array of CPU
@@ -122,10 +123,10 @@ static __always_inline void load_gdt(void)
     asm volatile("lgdt %0\n\t" ::"m"(gdt));
 }
 
-static inline void test_user_mode_function(void)
+static void test_user_mode_function(void)
 {
-    printk("Test in usermode\n");
-    printk("CPL: %d\n", get_current_level_privilege());
+    test_kmalloc_user();
+    test_kmalloc_invalid_user();
     while (1) {
     }
 }
@@ -133,14 +134,14 @@ static inline void test_user_mode_function(void)
 __attribute__((naked, noreturn)) void jump_usermode(void)
 {
     asm volatile(".intel_syntax noprefix\n\t"
-                 "mov ax, 0x30 | 3\n\t"
+                 "mov ax, 0x28 | 3\n\t"
                  "mov ds, ax\n\t"
                  "mov es, ax\n\t"
                  "mov fs, ax\n\t"
                  "push 0x30 | 3\n\t"
                  "push esp\n\t"
                  "pushf\n\t"
-                 "push 0x28 | 3\n\t"
+                 "push 0x20 | 3\n\t"
                  "push %0\n\t"
                  "iret\n\t"
                  ".att_syntax prefix\n\t"

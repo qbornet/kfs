@@ -5,6 +5,8 @@
 
 void *kmalloc(uint32_t size, uint8_t flags)
 {
+    if (size == 0) return NULL;
+
     void    *ret = NULL;
     uint8_t  first_page = 0;
     uint32_t virtual_base = 0;
@@ -19,33 +21,26 @@ void *kmalloc(uint32_t size, uint8_t flags)
         return NULL;
     }
 
-    printk("kmalloc frame: %p\n", frame);
     pfn_t *page = get_page_info((uint32_t)frame);
     if (!page) {
         printk("get_page_info failed\n");
         return NULL;
     }
 
-    printk("kmalloc page: %p\n", page);
-    printk("kmalloc page->alloc_size: %d, page->flags: %d\n",
-           page->alloc_size,
-           page->flags);
     for (uint32_t i = 0; i < page->alloc_size; i++) {
         page_frame_t tmp = (page_frame_t)((uint32_t)frame + (i * FRAME_SIZE));
-        printk("[%d]: tmp: %p\n", i, tmp);
         virtual_base += (i * FRAME_SIZE);
         if (!first_page) {
-            ret = get_memory_page(tmp, virtual_base);
+            ret = get_memory_page(tmp, virtual_base, flags);
             first_page = 1;
-        } else {
-            // check virtual base and add based on the  user_space/kernel_space
-            get_memory_page(tmp, virtual_base);
+            continue;
         }
+        get_memory_page(tmp, virtual_base, flags);
     }
     if (!flags || flags & SP_KERNEL) {
-        g_kernel_start_virt_mem = virtual_base;
+        g_kernel_start_virt_mem += (page->alloc_size * FRAME_SIZE);
     } else if (flags & SP_USER) {
-        g_user_start_virt_mem = virtual_base;
+        g_user_start_virt_mem += (page->alloc_size * FRAME_SIZE);
     }
     return ret;
 }

@@ -10,6 +10,7 @@
 #include <multiboot2.h>
 #include <multiboot2_info.h>
 #include <paging/paging.h>
+#include <paging/test_paging.h>
 #include <vga/vga.h>
 
 #endif

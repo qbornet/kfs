@@ -28,6 +28,6 @@ void page_fault_handler(register_t *regs)
     if (id) printk(" [Instruction Fetch] ");
     printk("\n");
 
-    printk("System Halted.\n");
+    printk("stop the kernel.\n");
     while (1) asm volatile("cli; hlt");
 }

@@ -42,8 +42,6 @@ static __always_inline void set_cr3(uint32_t page_directory)
 
 static __always_inline uint32_t get_address_value(void *phys)
 {
-    printk(
-        "all phys value: %p, shifted 12: 0x%x\n", phys, (uint32_t)phys >> 12);
     return (uint32_t)phys >> 12;
 }
 
@@ -68,12 +66,13 @@ void destroy_memory_page(void *vaddr)
     memset(&v_pte[ptindex], 0, sizeof(pte_t));
 }
 
-void *get_memory_page(page_frame_t frame, uint32_t vaddr)
+void *get_memory_page(page_frame_t frame, uint32_t vaddr, uint8_t flags)
 {
     uint32_t ptindex = PTE_INDEX(vaddr);
     uint32_t pdindex = PDE_INDEX(vaddr);
     // Get the g_page_directory
     pde_t   *v_pde = (pde_t *)P2V(g_page_directory);
+    /*
     debug_t  v_pde_0 = { .directory = v_pde[0] };
     debug_t  v_pde_768 = { .directory = v_pde[768] };
     debug_t  v_pde_769 = { .directory = v_pde[769] };
@@ -83,25 +82,26 @@ void *get_memory_page(page_frame_t frame, uint32_t vaddr)
            v_pde_768.representation,
            v_pde_769.representation);
 
-    pte_t *v_pte = NULL;
-    if (pdindex >= KERNEL_PAGE_DIRECTORY_INDEX) {
+           */
+    pte_t   *v_pte = NULL;
+    if (flags & SP_KERNEL) {
         v_pte = (pte_t *)g_page_table_kernel_space;
-    } else if (pdindex >= USER_PAGE_DIRECTORY_INDEX
-               && pdindex < KERNEL_PAGE_DIRECTORY_INDEX) {
+    } else if (flags & SP_USER) {
         v_pte = (pte_t *)g_page_table_user_space;
     }
     if (v_pte[ptindex].present == 0) {
+        if (flags & SP_USER) v_pte[ptindex].user = 1;
         v_pte[ptindex].rw = 1;
         v_pte[ptindex].address = get_address_value(frame);
         v_pte[ptindex].present = 1;
     } else {
-        printk("Already mapped skipping...\n");
         return NULL;
     }
 
     v_pde[pdindex].rw = 1;
     v_pde[pdindex].address = get_address_value((void *)V2P(v_pte));
     v_pde[pdindex].present = 1;
+    /*
     v_pde_768.directory = v_pde[768];
     v_pde_769.directory = v_pde[pdindex];
     printk("v_pde: %p\nvalue hold at 0: 0x%x, at 768: 0x%x, at 769: 0x%x\n",
@@ -109,6 +109,7 @@ void *get_memory_page(page_frame_t frame, uint32_t vaddr)
            v_pde_0.representation,
            v_pde_768.representation,
            v_pde_769.representation);
+           */
     set_cr3((uint32_t)g_page_directory);
     return (void *)vaddr;
 }
@@ -118,15 +119,4 @@ void init_paging(uint32_t base_addrs, uint32_t size)
     printk("Memory available: %x B\n", size);
     init_pfn_db(size);
     init_frame_page(base_addrs, size);
-    printk("finished init_frame_page & init_pfn_db\n");
-    printk("calling kmalloc()\n");
-    void *vaddr = kmalloc(0x10, SP_KERNEL);
-    if (vaddr) {
-        printk("vaddr: %p\n", vaddr);
-        memcpy(vaddr, "toto", 4);
-        printk("%p:[%s]\n", vaddr, (char *)vaddr);
-        kfree(vaddr);
-    } else {
-        printk("Error when getting new page\n");
-    }
 }

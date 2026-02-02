@@ -69,13 +69,13 @@ typedef struct s_page_table_entry {
 
 // Init paging
 void                      destroy_memory_page(void *vaddr);
-void                     *get_memory_page(page_frame_t frame, uint32_t vaddr);
-void                      init_paging(uint32_t base_addrs, uint32_t size);
+void *get_memory_page(page_frame_t frame, uint32_t vaddr, uint8_t flags);
+void  init_paging(uint32_t base_addrs, uint32_t size);
 
-extern uint32_t           g_page_table_kernel_space[];
-extern uint32_t           g_page_table_user_space[];
-extern uint32_t           g_page_directory[];
-extern uint32_t           g_kernel_end;
-extern uint32_t           g_kernel_start_virt_mem;
-extern uint32_t           g_user_start_virt_mem;
+extern uint32_t g_page_table_kernel_space[];
+extern uint32_t g_page_table_user_space[];
+extern uint32_t g_page_directory[];
+extern uint32_t g_kernel_end;
+extern uint32_t g_kernel_start_virt_mem;
+extern uint32_t g_user_start_virt_mem;
 #endif

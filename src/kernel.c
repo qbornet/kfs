@@ -48,6 +48,7 @@ void kernel_main(boot_info_t *boot_info)
                         + boot_info->mmap_info[to_save].base_low;
     printk("base_addrs: 0x%x, highest_size: 0x%x\n", base_addrs, highest_size);
     init_paging(base_addrs, highest_size);
+    test_kmalloc();
     while (1) {
         asm volatile("hlt");
     }

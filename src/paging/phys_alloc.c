@@ -86,16 +86,10 @@ void *pmalloc(uint32_t size)
     while ((++i * FRAME_SIZE) < size) {
         palloc_frame();
     }
-    printk("pmalloc frame:%p\n", ret);
     uint32_t index = ((uint32_t)ret - g_start_phys_mem) / FRAME_SIZE;
-    printk("pmalloc index: %d\n", index);
-    pfn_t *page = &g_mem_map[index];
-    printk("pmalloc page: %p\n", page);
+    pfn_t   *page = &g_mem_map[index];
     page->alloc_size = i;
     page->flags |= PFN_FLAG_USED | PFN_FLAG_KERNEL;
-    printk("pmalloc page->alloc_size: %d, page->flags: %d\n",
-           page->alloc_size,
-           page->flags);
     return ret;
 }
 
