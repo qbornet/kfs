@@ -16,6 +16,7 @@ void kernel_main(boot_info_t *boot_info)
     serial_init();
     init_cpu_state();
     init_gdt();
+    init_idt();
     printk("Kernel Loaded. RAM Detecded: %u MiB / %u B\n",
            boot_info->max_memory / 1024 / 1024,
            boot_info->max_memory);

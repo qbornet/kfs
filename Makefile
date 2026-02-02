@@ -13,6 +13,7 @@ LDFLAGS = -T linker.ld -z noexecstack -nostdlib
 
 SRC_DIR = src
 OBJ_DIR = obj
+IDT_DIR = $(SRC_DIR)/idt
 ASM_DIR = $(SRC_DIR)/asm
 VGA_DIR = $(SRC_DIR)/vga
 LIB_DIR = $(SRC_DIR)/lib
@@ -21,11 +22,12 @@ PAGING_DIR = $(SRC_DIR)/paging
 SERIAL_DIR = $(SRC_DIR)/serial
 ISO_DIR = iso
 
-C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard $(SERIAL_DIR)/*.c) $(wildcard $(PAGING_DIR)/*.c) $(wildcard $(BOOT_DIR)/*.c)
+C_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(VGA_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard $(SERIAL_DIR)/*.c) $(wildcard $(PAGING_DIR)/*.c) $(wildcard $(BOOT_DIR)/*.c) $(wildcard $(IDT_DIR)/*.c)
 ASM_SOURCES = $(wildcard $(ASM_DIR)/*.asm)
 HEADERS = $(wildcard $(SRC_DIR)/**/*.h) $(wildcard $(VGA_DIR)/**/*.h) $(wildcard $(LIB_DIR)/**/*.h) $(wildcard $(SERIAL_DIR)/**/*.h) $(wildcard $(BOOT_DIR)/**/*.h)
 
 C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
+IDT_OBJECTS = $(patsubst $(IDT_DIR)/%.c, $(OBJ_DIR)/idt/%.o, $(filter $(IDT_DIR)/%.c, $(C_SOURCES)))
 VGA_OBJECTS = $(patsubst $(VGA_DIR)/%.c, $(OBJ_DIR)/vga/%.o, $(filter $(VGA_DIR)/%.c, $(C_SOURCES)))
 LIB_OBJECTS = $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(filter $(LIB_DIR)/%.c, $(C_SOURCES)))
 BOOT_OBJECTS = $(patsubst $(BOOT_DIR)/%.c, $(OBJ_DIR)/boot/%.o, $(filter $(BOOT_DIR)/%.c, $(C_SOURCES)))
@@ -33,7 +35,7 @@ PAGING_OBJECTS = $(patsubst $(PAGING_DIR)/%.c, $(OBJ_DIR)/paging/%.o, $(filter $
 SERIAL_OBJECTS = $(patsubst $(SERIAL_DIR)/%.c, $(OBJ_DIR)/serial/%.o, $(filter $(SERIAL_DIR)/%.c, $(C_SOURCES)))
 ASM_OBJECTS = $(patsubst $(ASM_DIR)/%.asm, $(OBJ_DIR)/asm/%.o, $(ASM_SOURCES))
 
-OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(BOOT_OBJECTS)
+OBJECTS = $(ASM_OBJECTS) $(C_OBJECTS) $(VGA_OBJECTS) $(LIB_OBJECTS) $(BOOT_OBJECTS) $(IDT_OBJECTS)
 GRUB_DIR = $(ISO_DIR)/boot/grub
 BIN_FILE = kernel.bin
 SYM_FILE = kernel.sym
@@ -46,6 +48,7 @@ directories:
 	@echo $(CC)
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(OBJ_DIR)/asm
+	mkdir -p $(OBJ_DIR)/idt
 	mkdir -p $(OBJ_DIR)/vga
 	mkdir -p $(OBJ_DIR)/lib
 	mkdir -p $(OBJ_DIR)/boot

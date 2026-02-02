@@ -3,6 +3,7 @@
 #include <boot/kernel_early.h>
 #include <boot/parser_mutliboot.h>
 #include <gdt.h>
+#include <idt/idt.h>
 #include <lib/cpl.h>
 #include <lib/io.h>
 #include <lib/mem.h>
