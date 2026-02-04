@@ -1,5 +1,6 @@
-#ifndef SHARED_H
-#define SHARED_H
+#ifndef DEFS_H
+#define DEFS_H
+#undef __glibc_has_attribute
 #define __glibc_has_attribute(attr) __has_attribute(attr)
 #if __glibc_has_attribute(__always_inline__)
 #undef __always_inline

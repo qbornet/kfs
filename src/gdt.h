@@ -1,6 +1,13 @@
 #ifndef GDT_H
 #define GDT_H
 
+#define IOMAP_INDEX(port) ((port) / 8)
+#define IOMAP_BIT(port)   ((port) % 8)
+
+// __VGA_DES Descriptor for gdt, index in segment selector for vga buffer.
+#undef __VGA_DES
+#define __VGA_DES                  0x20
+
 // set bit system on
 #define BIT_SYSTEM_ON              1
 #define BIT_SYSTEM_OFF             0
@@ -45,12 +52,13 @@
 #define ACCESS_DPL_RING_2          2
 #define ACCESS_DPL_RING_3          3
 
-#include "lib/io.h"
-#include "lib/mem.h"
-#include "lib/shared.h"
-#include "tss.h"
+#include <lib/cpl.h>
+#include <lib/io.h>
+#include <lib/mem.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <tss.h>
 
 // segment_descriptor based on the intel IA-32
 struct segment_descriptor {
@@ -67,7 +75,9 @@ struct gdt {
     uint16_t size;
     uint32_t address;
 } __attribute__((packed));
+extern tss_segment_t g_tss_entry;
 
-void init_gdt(void);
-void jump_usermode(void);
+void                 init_cpu_state(void);
+void                 init_gdt(void);
+void                 jump_usermode(void);
 #endif

@@ -1,8 +1,25 @@
-#include "vga.h"
+#include <vga/vga.h>
 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color)
+size_t                          g_terminal_row;
+size_t                          g_terminal_column;
+uint8_t                         g_terminal_color;
+uint16_t                       *g_terminal_buffer = (uint16_t *)VGA_MEMORY;
+
+static __always_inline uint16_t vga_entry(unsigned char uc, uint8_t color)
 {
     return (uint16_t)uc | (uint16_t)color << 8;
+}
+
+static __always_inline bool gs_present(void)
+{
+    uint32_t gs;
+    asm volatile(".intel_syntax noprefix\n\t"
+                 "mov %0, gs\n\t"
+                 ".att_syntax prefix\n\t"
+                 : "=r"(gs)
+                 :
+                 : "eax");
+    return gs == __VGA_DES ? true : false;
 }
 
 inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink)
@@ -10,12 +27,7 @@ inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg, int blink)
     return fg | bg << 4 | blink << 7;
 }
 
-size_t    g_terminal_row;
-size_t    g_terminal_column;
-uint8_t   g_terminal_color;
-uint16_t *g_terminal_buffer = (uint16_t *)VGA_MEMORY;
-
-void      terminal_initialize(void)
+void terminal_initialize(void)
 {
     g_terminal_row = 0;
     g_terminal_column = 0;
@@ -37,11 +49,15 @@ void terminal_setcolor(uint8_t color)
 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
+    const size_t global_buffer = y * VGA_WIDTH + x;
     const size_t index = (y * VGA_WIDTH + x) * 2;
     uint16_t     value = vga_entry(c, color);
-
-    asm volatile("movw %0,  %%gs:(%1)" ::"r"(value), "r"(index)
-                 : "memory");
+    if (gs_present()) {
+        asm volatile("movw %0,  %%gs:(%1)" ::"r"(value), "r"(index)
+                     : "memory");
+    } else {
+        g_terminal_buffer[global_buffer] = value;
+    }
 }
 
 void set_terminal_column(int num)
@@ -101,6 +117,21 @@ void terminal_write(const char *data, size_t size)
     }
 }
 
+void update_cursor(void)
+{
+    uint16_t pos = g_terminal_row * VGA_WIDTH + g_terminal_column;
+
+    // Set cursor position low address in register to be writable
+    outb(0x0F, 0x3D4);
+    // Put low 8 bits of pos to cursor position low
+    outb((uint8_t)(pos & 0xFF), 0x3D5);
+
+    // Set cursor position high address in register to be writable
+    outb(0x0E, 0x3D4);
+    // Put high 8 bits of pos to cursor position high
+    outb((uint8_t)((pos >> 8) & 0xFF), 0x3D5);
+}
+
 void terminal_writestring(const char *data, uint8_t color)
 {
     if (color != 0) {
@@ -109,4 +140,5 @@ void terminal_writestring(const char *data, uint8_t color)
         terminal_setcolor(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK, 0));
     }
     terminal_write(data, strlen(data));
+    update_cursor();
 }

@@ -1,12 +1,13 @@
 #ifndef PRINTK_H
 #define PRINTK_H
-#include "../lib/shared.h"
-#include "../vga/vga.h"
-#include "ctype.h"
-#include "mem.h"
-#include "string.h"
+#include <lib/ctype.h>
+#include <lib/mem.h>
+#include <lib/shared/defs.h>
+#include <lib/string.h>
+#include <serial/serial.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <vga/vga.h>
 
 // struct for optional param indentifier for printk.
 typedef struct param_padding_character_modifier {

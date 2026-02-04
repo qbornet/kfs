@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
-#include "mem.h"
-#include "printk.h"
+#include <lib/mem.h>
+#include <lib/printk.h>
 
 // Print a area of memory start at the addr end at addr + len.
 void print_memory(void *addr, size_t len);

@@ -1,12 +1,18 @@
 #ifndef VGA_H
 #define VGA_H
-#include "../lib/string.h"
+#include <lib/shared/io.h>
+#include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+// __VGA_DES Descriptor for gdt, index in segment selector for vga buffer.
+#undef __VGA_DES
+#define __VGA_DES  0x20
+
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
-#define VGA_MEMORY 0xB8000
+#define VGA_MEMORY 0xC03FF000
 
 // enum text mode vga color.
 enum vga_color {
@@ -69,4 +75,12 @@ void    terminal_putchar(char c);
 // Write a string to the current position based on terminal_row and
 // terminal_column variable.
 void    terminal_writestring(const char *data, uint8_t color);
+
+/*
+ * Update the current position of the cursor via VGA I/O ports
+ * http://www.osdever.net/FreeVGA/vga/portidx.htm
+ * */
+
+// Update the current position of the cursor
+void    update_cursor(void);
 #endif
