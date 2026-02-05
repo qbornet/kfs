@@ -21,11 +21,12 @@
                 flex
                 nasm
 
+                ## FOR C
                 # Linter & Formater
-                clang-tools
+                #clang-tools
 
                 # Generate compile_commands.json
-                bear
+                #bear
 
                 # Xorriso & Bootloader
                 xorriso
@@ -37,6 +38,8 @@
                 # debug tools
                 gdb
                 socat
+                zig
+                zig-zlint
             ];
             buildInputs = [];
 
@@ -44,9 +47,9 @@
                 echo "------------------------------------------------------------------"
                 echo "🌲 Kernel Dev Environment Loaded"
                 echo "🎯 Target: i686 (32-bit x86)"
-                echo "🛠  Compiler ($CC): $( $CC --version | head -n 1 )"
+                echo "🛠  Compiler (zig): $( zig version )"
                 echo "------------------------------------------------------------------"
-                alias cc='bear -- make'
+                export ZIG_GLOBAL_CACHE_DIR=$HOME/.cache/zig
             '';
             NIXOS_DEV_ENV="ON";
         };

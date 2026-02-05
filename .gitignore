@@ -8,3 +8,5 @@ obj/
 .cache/
 compile_commands.json
 tags
+.zig-cache/
+zig-out/
