@@ -74,18 +74,6 @@ $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.c $(HEADERS)
 $(OBJ_DIR)/asm/%.o: $(ASM_DIR)/%.asm
 	$(NASM) -f elf32 -g -F dwarf $< -o $@
 
-
-$(ISO_FILE): $(BIN_FILE)
-	@cp -f kernel.bin $(ISO_DIR)/boot/
-	@echo "Generating ISO image..."
-	xorriso -as mkisofs \
-		-o nilbogos.iso \
-		-b boot/grub/i386-pc/eltorito.img \
-		-c boot.catalog \
-		-no-emul-boot \
-		-boot-load-size 4 \
-		-boot-info-table iso
-
 run: $(ISO_FILE)
 	qemu-system-i386 -cdrom $(ISO_FILE) -serial mon:stdio
 
