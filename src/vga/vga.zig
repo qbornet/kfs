@@ -1,6 +1,11 @@
 const std = @import("std");
 const mem = @import("../lib/mem.zig");
 
+//  Needed when calling @memset or other exported symbols.
+comptime {
+    _ = mem;
+}
+
 const VGA_WIDTH = 80;
 const VGA_HEIGHT = 25;
 const VGA_SIZE = VGA_WIDTH * VGA_HEIGHT;
@@ -57,7 +62,7 @@ pub fn setColor(fg: Color, bg: Color) void {
 }
 
 pub fn clear() void {
-    mem.memset(g_buffer[0..VGA_SIZE], Color.getVgaChar(g_color, ' '), VGA_SIZE);
+    @memset(g_buffer[0..VGA_SIZE], Color.getVgaChar(g_color, ' '));
 }
 
 pub fn printCharAt(char: u8, color: Color, x: usize, y: usize) void {
@@ -114,6 +119,24 @@ fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) !usize {
             for (0..splat) |_| {
                 printString(pattern);
             }
-        }
+        },
     }
+
+    consumed += splat_len;
+    return consumed;
+}
+
+pub fn writer(buffer: []u8) std.Io.Writer {
+    return .{
+        .buffer = buffer,
+        .end = 0,
+        .vtable = &.{
+            .drain = drain,
+        },
+    };
+}
+
+pub fn print(comptime fmt: []const u8, args: anytype) void {
+    var w = writer(&.{});
+    w.print(fmt, args) catch return;
 }
