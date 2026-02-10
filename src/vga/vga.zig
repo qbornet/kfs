@@ -12,7 +12,7 @@ const VGA_SIZE = VGA_WIDTH * VGA_HEIGHT;
 
 var g_row: usize = 0;
 var g_column: usize = 0;
-var g_color: Color = .init(.light_gray, .black);
+var g_color: Color = .init(.green, .black);
 var g_buffer = @as([*]volatile u16, @ptrFromInt(0xB8000));
 
 pub const ColorType = enum(u4) {
@@ -57,8 +57,8 @@ pub fn init() void {
     clear();
 }
 
-pub fn setColor(fg: Color, bg: Color) void {
-    g_color = Color.init(fg, bg);
+pub fn setColor(color: Color) void {
+    g_color = color;
 }
 
 pub fn clear() void {
