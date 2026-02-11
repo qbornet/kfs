@@ -1,2 +1,0 @@
-CompileFlags:
-  Add: [-m32, --target=i386-linux-gnu, -nostdlib, -nodefaultlibs, -Isrc/vga, -Isrc/mem, -Isrc/lib]
