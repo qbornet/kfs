@@ -6,8 +6,8 @@ comptime {
     if (builtin.object_format != .c) {
         @export(&memset, .{ .name = "memset", .linkage = .weak, .visibility = .default });
         @export(&__memset, .{ .name = "__memset", .linkage = .weak, .visibility = .default });
-        @export(&memcpy, .{ .name = "memcpy", .linkage = .weak, .visibility = .default});
-        @export(&memmove, .{ .name = "memmove", .linkage = .weak, .visibility = .default});
+        @export(&memcpy, .{ .name = "memcpy", .linkage = .weak, .visibility = .default });
+        @export(&memmove, .{ .name = "memmove", .linkage = .weak, .visibility = .default });
     }
 }
 

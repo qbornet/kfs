@@ -70,7 +70,6 @@ pub fn printCharAt(char: u8, color: Color, x: usize, y: usize) void {
     g_buffer[index] = color.getVgaChar(char);
 }
 
-
 pub fn printChar(char: u8) void {
     switch (char) {
         '\n' => {
@@ -86,7 +85,7 @@ pub fn printChar(char: u8) void {
                 g_row += 1;
                 checkAndScroll();
             }
-        }
+        },
     }
 }
 

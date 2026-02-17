@@ -26,7 +26,8 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/kernel.zig"),
         .link_libc = false,
         .single_threaded = true,
-        .code_model = .kernel,
+        .strip = false, // specify this to have debug info
+        // .code_model = .kernel,
         // .no_builtin = true, // Removed: usually handled by createModule defaults for freestanding, but keep if strictly needed
     });
 
