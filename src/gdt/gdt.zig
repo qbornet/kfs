@@ -25,10 +25,10 @@ const DescriptorTypes = enum(u32) {
 
 /// For Segment Descriptor privilege level needed to be used.
 const DescriptorPrivilegeLevel = enum(u3) {
-    Ring_0 = 0,
-    Ring_1,
+    Ring_0 = 0, // Highest Privilege (Kernel Space)
+    Ring_1, 
     Ring_2,
-    Ring_3,
+    Ring_3, // Lowest Privilege (User Space)
 };
 
 const SegmentDescriptor = packed struct {
@@ -36,17 +36,25 @@ const SegmentDescriptor = packed struct {
     end: u32,
 };
 
-export var g_sdes: [16]SegmentDescriptor  = [_]SegmentDescriptor{.{ .start = 0, .end = 0 }} ** 16;
+var g_sdes: [16]SegmentDescriptor  = [_]SegmentDescriptor{.{ .start = 0, .end = 0 }} ** 16;
 
 inline fn createDescriptorPrivilege(lvl: DescriptorPrivilegeLevel) u32 {
     const lvl_int: u32 = @intFromEnum(lvl);
     return lvl_int << 13;
 }
 
-inline fn createSegmentDescriptor(base: u32, limit: u32, flags: u32, types: u32, lvl: DescriptorPrivilegeLevel, segs: *SegmentDescriptor) void {
-    //const state = struct {
-    //    var idx: usize = 0;
-    //};
+/// Create SegmentDescriptor for gdt.
+/// @params: 
+/// - `u32 base` start of the segment address.
+/// - `u32 limit` limit end of the segment.
+/// - `u32 flags` integer version of `GdtFlags` refer to it for more information.
+/// - `u32 types` integer version of `DescriptorTypes` refer to it for more information..
+/// - `DescriptorPrivilegeLevel lvl` Privilege Level that the segment should be refer to enum for more infomration.
+/// - `*volatile SegmentDescriptor segs` pointer to the segment descriptor array that hold the information about segment for the gdt.
+///
+/// **Note:** `volatile` here is needed because of the **LLVM backend trick that might happens and try to optimize to early the `g_sdes`**,
+/// thus not allowing use to properly write the entry of `g_sdes`.
+inline fn createSegmentDescriptor(base: u32, limit: u32, flags: u32, types: u32, lvl: DescriptorPrivilegeLevel, segs: *volatile SegmentDescriptor) void {
     segs.start = (limit & 0xffff) | (base & 0xffff) << 16;
     const new_limit = limit >> 16;
     var new_base = base >> 16;
@@ -60,8 +68,6 @@ inline fn createSegmentDescriptor(base: u32, limit: u32, flags: u32, types: u32,
     const limit_value: u32 = (new_limit & 0xf) << 16;
 
     segs.end = low_address | high_address | limit_value | types | flags | createDescriptorPrivilege(lvl);
-    console.print("test\n", .{});
-    //state.idx += 1;
 }
 
 
@@ -74,7 +80,7 @@ inline fn reloadSegments() void {
         \\  mov %%ax, %%es
         \\  mov %%ax, %%fs
         \\  mov %%ax, %%gs
-        \\  mov $0x20, %%ax 
+        \\  mov $0x18, %%ax 
         \\  mov %%ax, %%ss
         ::: .{ .ax = true, .memory = true });
 }
@@ -85,27 +91,24 @@ const Gdt = packed struct {
 };
 
 inline fn loadGdt() void {
-    var gdt: Gdt = .{ .size = 0, .addrs = 0 };
-    gdt.size = (g_sdes.len * @sizeOf(SegmentDescriptor)) - 1;
-    gdt.addrs = @intFromPtr(&g_sdes);
-    //console.print("gdt addrs: {*} gdt.addrs: 0x{x}\n", .{&gdt, gdt.addrs});
+    var gdt_ptr = Gdt{
+        .size = @intCast((g_sdes.len * @sizeOf(SegmentDescriptor)) - 1),
+        .addrs = @intFromPtr(&g_sdes)
+    };
+   
     asm volatile (
         \\ cli
-        \\ lgdt %[addr]
+        \\ lgdt (%[addr])
         :
-        : [addr] "m" (gdt),
+        : [addr] "r" (&gdt_ptr),
         : .{ .memory = true }
     );
-    // reloadSegments();
+    reloadSegments();
 }
 
 
+/// Initialize gdt with kernel segment descriptor & user segment descriptor. 
 pub fn init() void {
-    // NULL DECSRIPTOR
-    for (0..16) |i| {
-        console.print("[{d}]: g_sdes.start=0x{x} g_sdes.end=0x{x}\n", .{i, g_sdes[i].start, g_sdes[i].end});
-    }
-
     var flags: u32 = @intFromEnum(GdtFlags.Granularity) | @intFromEnum(GdtFlags.Present) | @intFromEnum(GdtFlags.System) | @intFromEnum(GdtFlags.DefaultBig);
     var types: u32 = @intFromEnum(DescriptorTypes.Data) | @intFromEnum(DescriptorTypes.Readable);
     // KERNEL CODE DESCRIPTOR
@@ -120,8 +123,5 @@ pub fn init() void {
     types = @intFromEnum(DescriptorTypes.Readable) | @intFromEnum(DescriptorTypes.Expend);
     // KERNEL STACK DESCRIPTOR
     createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_0, &g_sdes[3]);
-    for (0..16) |i| {
-        console.print("[{d}]: g_sdes.start=0x{x} g_sdes.end=0x{x}\n", .{i, g_sdes[i].start, g_sdes[i].end});
-    }
     loadGdt();
 }
