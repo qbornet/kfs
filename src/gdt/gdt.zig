@@ -111,17 +111,30 @@ inline fn loadGdt() void {
 pub fn init() void {
     var flags: u32 = @intFromEnum(GdtFlags.Granularity) | @intFromEnum(GdtFlags.Present) | @intFromEnum(GdtFlags.System) | @intFromEnum(GdtFlags.DefaultBig);
     var types: u32 = @intFromEnum(DescriptorTypes.Data) | @intFromEnum(DescriptorTypes.Readable);
+
     // KERNEL CODE DESCRIPTOR
     createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_0, &g_sdes[1]);
+    
+    // USER CODE DESCRIPTOR
+    createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_3, &g_sdes[4]);
 
     flags = @intFromEnum(GdtFlags.Granularity) | @intFromEnum(GdtFlags.Present) | @intFromEnum(GdtFlags.System) | @intFromEnum(GdtFlags.DefaultBig);
     types = @intFromEnum(DescriptorTypes.Readable);
+
     // KERNEL DATA DESCRIPTOR
     createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_0, &g_sdes[2]);
 
+    // USER DATA DESCRIPTOR
+    createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_3, &g_sdes[5]);
+
     flags = @intFromEnum(GdtFlags.Granularity) | @intFromEnum(GdtFlags.System) | @intFromEnum(GdtFlags.Present) | @intFromEnum(GdtFlags.DefaultBig);
     types = @intFromEnum(DescriptorTypes.Readable) | @intFromEnum(DescriptorTypes.Expend);
+
     // KERNEL STACK DESCRIPTOR
     createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_0, &g_sdes[3]);
+
+    // USER STACK DESCRIPTOR
+    createSegmentDescriptor(0x00000000, 0xFFFFFFFF, flags, types, .Ring_3, &g_sdes[6]);
+
     loadGdt();
 }

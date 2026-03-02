@@ -20,6 +20,26 @@ pub fn build(b: *std.Build) void {
     const boot_obj = nasm_cmd.addOutputFileArg("boot.o");
 
 
+    // Unit testing step
+    const test_step = b.step("test", "Run unit tests");
+    const unit_test = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/root_test.zig"), // this does all the unit test for important function inside the kernel.
+            .target = b.resolveTargetQuery(.{
+                .cpu_arch = .x86,
+                .abi = .none,
+                // .os_tag = .freestanding, freestanding not used for testing purpose for function
+            }),
+            .optimize = optimize,
+            .link_libc = false,
+            .strip = false, // specify this to have debug info
+        }),
+    });
+
+    // Run test unit.
+    const run_unit_tests = b.addRunArtifact(unit_test);
+    test_step.dependOn(&run_unit_tests.step);
+
     const root_module = b.createModule(.{
         .target = target,
         .optimize = optimize,

@@ -11,7 +11,7 @@ comptime {
     }
 }
 
-fn memmove(opt_dest: ?[*]u8, opt_src: ?[*]const u8, len: usize) callconv(.c) ?[*]u8 {
+pub fn memmove(opt_dest: ?[*]u8, opt_src: ?[*]const u8, len: usize) callconv(.c) ?[*]u8 {
     const dest = opt_dest.?;
     const src = opt_src.?;
 
@@ -27,7 +27,7 @@ fn memmove(opt_dest: ?[*]u8, opt_src: ?[*]const u8, len: usize) callconv(.c) ?[*
     return dest;
 }
 
-fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, len: usize) callconv(.c) ?[*]u8 {
+pub fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, len: usize) callconv(.c) ?[*]u8 {
     @setRuntimeSafety(false);
 
     for (0..len) |i| {
@@ -37,13 +37,13 @@ fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, len: usize) callconv(
     return dest;
 }
 
-fn __memset(dest: ?[*]u8, c: u8, n: usize, dest_n: usize) callconv(.c) ?[*]u8 {
+pub fn __memset(dest: ?[*]u8, c: u8, n: usize, dest_n: usize) callconv(.c) ?[*]u8 {
     if (dest_n < n)
         @panic("buffer overflow");
     return memset(dest, c, n);
 }
 
-fn memset(dest: ?[*]u8, c: u8, len: usize) callconv(.c) ?[*]u8 {
+pub fn memset(dest: ?[*]u8, c: u8, len: usize) callconv(.c) ?[*]u8 {
     @setRuntimeSafety(false);
 
     if (len != 0) {
