@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = @import("../lib/mem.zig");
+const serial = @import("../serial/serial.zig");
 
 //  Needed when calling @memset or other exported symbols.
 comptime {
@@ -55,6 +56,7 @@ fn checkAndScroll() void {
 
 pub fn init() void {
     clear();
+    serial.init();
 }
 
 pub fn setColor(color: Color) void {
@@ -95,6 +97,8 @@ pub fn printString(str: []const u8) void {
     }
 }
 
+/// `splat` is the numbers of time that you will write the last items of data slices (this is a logical memset),
+/// this is done so that it's more efficient and avoid indirect calls. (only if last slice is equal to 0 do nothing).
 fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) !usize {
     std.debug.assert(data.len != 0);
 
@@ -102,20 +106,27 @@ fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) !usize {
     const pattern = data[data.len - 1];
     const splat_len = pattern.len * splat;
 
+    // Check if we already have a buffer present if so write and set end to 0.
     if (w.end != 0) {
-        printString(w.buffered());
+        const str = w.buffered();
+        serial.putstr(str);
+        printString(str);
         w.end = 0;
     }
 
+    // Take all the data and print (remove the last slices because of the splat logic).
     for (data[0 .. data.len - 1]) |bytes| {
+        serial.putstr(bytes);
         printString(bytes);
         consumed += bytes.len;
     }
 
+    // If last items of data is not 0, write it splat times.
     switch (pattern.len) {
         0 => {},
         else => {
             for (0..splat) |_| {
+                serial.putstr(pattern);
                 printString(pattern);
             }
         },
