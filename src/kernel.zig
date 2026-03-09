@@ -1,6 +1,7 @@
 const std = @import("std");
 const console = @import("vga/vga.zig");
 const gdt = @import("gdt/gdt.zig");
+const idt = @import("idt/idt.zig");
 const MULTIBOOT2_BOOTLOADER_MAGIC = 0x36d76289;
 
 export fn kernel_main(magic: u32, mbi_address: u32) void {
@@ -11,6 +12,8 @@ export fn kernel_main(magic: u32, mbi_address: u32) void {
     console.print("console init done !\n", .{});
     gdt.init();
     console.print("gdt init done !\n", .{});
+    idt.init();
+    console.print("idit init done !\n", .{});
     while (true) {
         asm volatile ("hlt");
     }

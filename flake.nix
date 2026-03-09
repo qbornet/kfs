@@ -38,6 +38,8 @@
                 # debug tools
                 gdb
                 socat
+
+                # Compiler & Linter (zig)
                 zig
                 zig-zlint
             ];
@@ -45,9 +47,10 @@
 
             shellHook = ''
                 echo "------------------------------------------------------------------"
-                echo "🌲 Kernel Dev Environment Loaded"
-                echo "🎯 Target: i686 (32-bit x86)"
-                echo "🛠  Compiler (zig): $( zig version )"
+                echo "🌲    Kernel Dev Environment Loaded"
+                echo "🎯    Target: i686 (32-bit x86)"
+                echo "🛠     Compiler (zig): $( zig version )"
+                echo "     Shell: $( basename $SHELL )"
                 echo "------------------------------------------------------------------"
                 export ZIG_GLOBAL_CACHE_DIR=$HOME/.cache/zig
             '';
