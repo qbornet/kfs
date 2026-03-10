@@ -10,10 +10,12 @@ export fn kernel_main(magic: u32, mbi_address: u32) void {
 
     console.init();
     console.print("console init done !\n", .{});
+
     gdt.init();
     console.print("gdt init done !\n", .{});
+
     idt.init();
-    console.print("idit init done !\n", .{});
+    console.print("idt init done !\n", .{});
     while (true) {
         asm volatile ("hlt");
     }

@@ -1,5 +1,32 @@
 const std = @import("std");
 const console = @import("../vga/vga.zig");
+
+/// https://wiki.osdev.org/Interrupt_Descriptor_Table#IDT_items
+const CpuInterrupts = enum(u8) {
+    DE_FAULT = 0,
+    DB_FAULT,
+    NMI_INTERRUPT,
+    BP_TRAP,
+    OF_TRAP,
+    BR_FAULT,
+    UD_FAULT,
+    NM_FAULT,
+    DF_ABORT,
+    COPROCESS_FAULT,
+    TS_FAULT,
+    NP_FAULT,
+    SS_FAULT,
+    GP_FAULT,
+    PF_FAULT,
+    _RESERVED,
+    MF_FAULT,
+    AC_FAULT,
+    MC_ABORT,
+    XM_FAULT,
+    VE_FAULT,
+    CP_FAULT,
+};
+
 pub const IsrContext = packed struct {
     // Pushed manually in isr_common_stub (Segments)
     gs: u32, fs: u32, es: u32, ds: u32,
@@ -56,12 +83,11 @@ export fn interrupt_handler(ctx: *IsrContext) callconv(.c) void {
     else 
         "Unknown Exception";
 
-    // Assuming your console/vga print works
     console.print("\n[EXCEPTION {d}: {s}]\n", .{ctx.int_no, msg});
     console.print("EIP: 0x{x} | ERR: 0x{x} | EAX: 0x{x}\n", .{ctx.eip, ctx.error_code, ctx.eax});
 
-    // For critical exceptions, we hang
-    if (ctx.int_no <= 21) {
+    // Hangs for critical exceptions. This allow us to fix error (need to change this behavior in the future).
+    if (ctx.int_no <= CpuInterrupts.CP_FAULT) {
         while (true) {}
     }
 }

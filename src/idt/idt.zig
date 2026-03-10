@@ -2,7 +2,8 @@ const std = @import("std");
 const mem = @import("../lib/mem.zig");
 const console = @import("../vga/vga.zig");
 
-/// All the ISRs used by the idt.
+/// All the ISRs used by the idt
+// 0-21 is for CPUs ISRs.
 extern fn isr0() void;
 extern fn isr1() void;
 extern fn isr2() void;
@@ -44,15 +45,15 @@ const DescriptorPrivilegeLevel = enum(u3) {
 /// Gate Type enum for Gate Descriptor.
 const GateType = enum(u4) {
     TASK_GATE = 0x5, // Task Gate enum offset value is not used.
-    INTERUPT_GATE_16 = 0x6, // Interupt Gate enum for 16 bit.
+    INTERRUPT_GATE_16 = 0x6, // Interupt Gate enum for 16 bit.
     TRAP_GATE_16 = 0x7, // Trap Gate enum for 16 bit.
-    INTERUPT_GATE = 0xE, // Interupt Gate enum for 32bit.
+    INTERRUPT_GATE = 0xE, // Interupt Gate enum for 32bit.
     TRAP_GATE = 0xF, // Trap Gate enum for 32bit.
 };
 
 
 /// Interupt Decriptor used for IDT descriptor array.
-const InteruptDescriptor = packed struct {
+const InterruptDescriptor = packed struct {
     offset_1: u16,
     selector: u16,
     _ignored_0: u8,
@@ -63,16 +64,17 @@ const InteruptDescriptor = packed struct {
     offset_2: u16,
 };
 
-var g_idts: [255]InteruptDescriptor = undefined;
+var g_idts: [255]InterruptDescriptor = undefined;
 const Idt = packed struct {
     base: u32,
     size: u16,
 };
 
+/// Load idtr with g_idts (idt table)
 fn loadIdt() void {
     var idt_ptr = Idt{
         .base = @intFromPtr(&g_idts),
-        .size = @intCast((g_idts.len * @sizeOf(InteruptDescriptor)) - 1),
+        .size = @intCast((g_idts.len * @sizeOf(InterruptDescriptor)) - 1),
     };
 
     asm volatile(
@@ -85,12 +87,13 @@ fn loadIdt() void {
 }
 
 pub fn deleteInterruptDescriptor(index: u8) void {
-    if (g_idts[index] == 0) return;
+    if (g_idts[index].present == 0) return;
     @memset(&g_idts[index], 0);
 }
 
-const OffsetFunction = *const fn () callconv(.c) void;
-pub fn createInterruptDescriptor(index: u8, offset: OffsetFunction, selector: u16, attributes: GateType, dpl: DescriptorPrivilegeLevel) void {
+/// callconv(.c) is needed because .Interrupt doesn't exist anymore.
+const OffsetPointerFunction = *const fn () callconv(.c) void;
+pub fn createInterruptDescriptor(index: u8, offset: OffsetPointerFunction, attributes: GateType, dpl: DescriptorPrivilegeLevel) void {
     if (g_idts[index].present == 1) {
         console.print("Invalid index '{d}' already used\n", .{index});
         return;
@@ -98,12 +101,12 @@ pub fn createInterruptDescriptor(index: u8, offset: OffsetFunction, selector: u1
     const offset_value = @intFromPtr(offset);
     const offset_1: u16 = @truncate(offset_value);
     const offset_2: u16 = @truncate(offset_value >> 16);
-    g_idts[index] = InteruptDescriptor{
+    g_idts[index] = InterruptDescriptor{
         .dpl = dpl,
         .offset_1 = offset_1,
         .offset_2 = offset_2,
         .type_gate = attributes,
-        .selector = selector,
+        .selector = KERNEL_CODE_SEGMENT,
         ._ignored_0 = 0, 
         ._ignored_1 = 0,
         .present = 1,
@@ -111,26 +114,29 @@ pub fn createInterruptDescriptor(index: u8, offset: OffsetFunction, selector: u1
 }
 
 pub fn init() void {
-    createInterruptDescriptor(0, isr0, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(1, isr1, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(2, isr2, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(3, isr3, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(4, isr4, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(5, isr5, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(6, isr6, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(7, isr7, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(8, isr8, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(9, isr9, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(10, isr10, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(11, isr11, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(12, isr12, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(13, isr13, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(14, isr14, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(15, isr15, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(16, isr16, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(17, isr17, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(18, isr18, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(19, isr19, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(20, isr20, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
-    createInterruptDescriptor(21, isr21, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    // CPUs interrupt.
+    createInterruptDescriptor(0, isr0, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(1, isr1, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(2, isr2, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(3, isr3, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(4, isr4, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(5, isr5, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(6, isr6, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(7, isr7, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(8, isr8, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(9, isr9, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(10, isr10, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(11, isr11, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(12, isr12, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(13, isr13, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(14, isr14, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(15, isr15, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(16, isr16, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(17, isr17, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(18, isr18, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(19, isr19, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(20, isr20, .TRAP_GATE, .Ring_0);
+    createInterruptDescriptor(21, isr21, .TRAP_GATE, .Ring_0);
+
+    // IRQs
 }
