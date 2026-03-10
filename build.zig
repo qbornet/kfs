@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // Assembly file to compile with NASM
-    const nasm_cmd = b.addSystemCommand(&.{ "nasm", "-f", "elf32" });
+    var nasm_cmd = b.addSystemCommand(&.{ "nasm", "-f", "elf32" });
 
     // Add input file
     nasm_cmd.addFileArg(b.path("src/asm/boot.asm")); 
@@ -18,6 +18,11 @@ pub fn build(b: *std.Build) void {
     // 'boot_obj' is now a "LazyPath" representing the future file.
     nasm_cmd.addArg("-o");
     const boot_obj = nasm_cmd.addOutputFileArg("boot.o");
+
+    nasm_cmd = b.addSystemCommand(&.{ "nasm", "-f", "elf32" });
+    nasm_cmd.addFileArg(b.path("src/asm/interrupt.asm"));
+    nasm_cmd.addArg("-o");
+    const interrupt_obj = nasm_cmd.addOutputFileArg("interrupt.o");
 
 
     // Unit testing step
@@ -51,14 +56,16 @@ pub fn build(b: *std.Build) void {
         // .no_builtin = true, // Removed: usually handled by createModule defaults for freestanding, but keep if strictly needed
     });
 
+    // Link the NASM Object
+    root_module.addObjectFile(interrupt_obj);
+    root_module.addObjectFile(boot_obj);
+
     // Create the Executable
     const exe = b.addExecutable(.{
         .name = "kernel.bin",
         .root_module = root_module,
     });
 
-    // Link the NASM Object
-    exe.addObjectFile(boot_obj);
     
     // Set the linker script
     exe.setLinkerScript(b.path("linker.ld"));

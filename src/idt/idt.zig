@@ -1,9 +1,37 @@
 const std = @import("std");
 const mem = @import("../lib/mem.zig");
+const console = @import("../vga/vga.zig");
+
+/// All the ISRs used by the idt.
+extern fn isr0() void;
+extern fn isr1() void;
+extern fn isr2() void;
+extern fn isr3() void;
+extern fn isr4() void;
+extern fn isr5() void;
+extern fn isr6() void;
+extern fn isr7() void;
+extern fn isr8() void;
+extern fn isr9() void;
+extern fn isr10() void;
+extern fn isr11() void;
+extern fn isr12() void;
+extern fn isr13() void;
+extern fn isr14() void;
+extern fn isr15() void;
+extern fn isr16() void;
+extern fn isr17() void;
+extern fn isr18() void;
+extern fn isr19() void;
+extern fn isr20() void;
+extern fn isr21() void;
 
 comptime {
     _ = mem;
+    _ = @import("./interrupt_handler.zig");
 }
+
+const KERNEL_CODE_SEGMENT = 0x08;
 
 /// DPL enum u3 bit.
 const DescriptorPrivilegeLevel = enum(u3) {
@@ -56,15 +84,20 @@ fn loadIdt() void {
     );
 }
 
-pub fn deleteInteruptDescriptor(index: u8) void {
+pub fn deleteInterruptDescriptor(index: u8) void {
     if (g_idts[index] == 0) return;
     @memset(&g_idts[index], 0);
 }
 
-pub fn createInteruptDescriptor(index: u8, offset: u32, selector: u16, attributes: GateType, dpl: DescriptorPrivilegeLevel) void {
-    if (g_idts[index] != 0) @panic("index not available");
-    const offset_1 = (offset & 0xffff);
-    const offset_2 = ((offset >> 16) & 0xffff);
+const OffsetFunction = *const fn () callconv(.c) void;
+pub fn createInterruptDescriptor(index: u8, offset: OffsetFunction, selector: u16, attributes: GateType, dpl: DescriptorPrivilegeLevel) void {
+    if (g_idts[index].present == 1) {
+        console.print("Invalid index '{d}' already used\n", .{index});
+        return;
+    }
+    const offset_value = @intFromPtr(offset);
+    const offset_1: u16 = @truncate(offset_value);
+    const offset_2: u16 = @truncate(offset_value >> 16);
     g_idts[index] = InteruptDescriptor{
         .dpl = dpl,
         .offset_1 = offset_1,
@@ -78,5 +111,26 @@ pub fn createInteruptDescriptor(index: u8, offset: u32, selector: u16, attribute
 }
 
 pub fn init() void {
-    createInteruptDescriptor(0, 0, 0x08, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(0, isr0, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(1, isr1, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(2, isr2, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(3, isr3, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(4, isr4, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(5, isr5, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(6, isr6, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(7, isr7, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(8, isr8, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(9, isr9, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(10, isr10, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(11, isr11, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(12, isr12, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(13, isr13, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(14, isr14, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(15, isr15, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(16, isr16, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(17, isr17, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(18, isr18, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(19, isr19, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(20, isr20, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
+    createInterruptDescriptor(21, isr21, KERNEL_CODE_SEGMENT, .INTERUPT_GATE, .Ring_0);
 }
